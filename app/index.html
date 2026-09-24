@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TopLocal Studio</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // Surface startup errors instead of a blank window.
+      window.addEventListener("error", (e) => {
+        document.body.insertAdjacentHTML("beforeend", `<pre style="color:#c00;padding:16px;white-space:pre-wrap">${e.message}\n${e.filename}:${e.lineno}</pre>`);
+      });
+      window.addEventListener("unhandledrejection", (e) => {
+        document.body.insertAdjacentHTML("beforeend", `<pre style="color:#c00;padding:16px;white-space:pre-wrap">${e.reason}</pre>`);
+      });
+    </script>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

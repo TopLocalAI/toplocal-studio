@@ -1,0 +1,472 @@
+/*
+ * Quiet theme: warm monochrome, charcoal as the only emphasis color, 1px hairlines,
+ * no gradients or glows. Color appears only for status (success / error).
+ * Loaded after prototype.css and app.css so it overrides their tokens and accents.
+ */
+
+:root {
+  font-family: "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue",
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --bg: #fbfbfa;
+  --window: #ffffff;
+  --panel: #fbfbfa;
+  --panel-muted: #f5f5f3;
+  --surface: #ffffff;
+  --surface-hover: #f3f3f1;
+  --text: #2f3437;
+  --text-soft: #5f6368;
+  --muted: #9b9a97;
+  --border: #eaeaea;
+  --border-strong: #dcdcd9;
+  --accent: #2f3437;
+  --accent-blue: #2f3437;
+  --accent-soft: #f3f3f1;
+  --accent-border: #2f3437;
+  --success: #346538;
+  --success-soft: #edf3ec;
+  --danger: #9f2f2d;
+  --danger-soft: #fdebec;
+  --on-accent: #ffffff;
+  --overlay: rgba(255, 255, 255, 0.94);
+  --shadow: none;
+  --button-shadow: none;
+}
+
+:root[data-theme="dark"] {
+  --bg: #191919;
+  --window: #191919;
+  --panel: #1e1e1e;
+  --panel-muted: #232323;
+  --surface: #202020;
+  --surface-hover: #2a2a2a;
+  --text: #e9e8e5;
+  --text-soft: #b5b4b0;
+  --muted: #7f7e7a;
+  --border: #2e2e2e;
+  --border-strong: #3a3a3a;
+  --accent: #e9e8e5;
+  --accent-blue: #e9e8e5;
+  --accent-soft: #2a2a2a;
+  --accent-border: #e9e8e5;
+  --success: #7fb685;
+  --success-soft: #1f2b20;
+  --danger: #e5857f;
+  --danger-soft: #3a2323;
+  --on-accent: #191919;
+  --overlay: rgba(25, 25, 25, 0.94);
+}
+
+body {
+  background: var(--window);
+  color: var(--text);
+}
+
+/* Primary actions: solid charcoal, no gradient, no glow */
+.button-primary,
+.generate-button {
+  color: var(--on-accent);
+  background: var(--text);
+  border: 1px solid var(--text);
+  box-shadow: none;
+  border-radius: 8px;
+}
+
+.button-primary:hover,
+.generate-button:hover:not(:disabled) {
+  filter: none;
+  transform: none;
+  opacity: 0.88;
+}
+
+.generate-button:active:not(:disabled),
+.button:active {
+  transform: scale(0.98);
+}
+
+.generate-button:disabled {
+  color: var(--muted);
+  background: var(--panel-muted);
+  border-color: var(--border);
+  opacity: 1;
+}
+
+.button {
+  border-radius: 8px;
+  font-weight: 560;
+}
+
+.button:hover {
+  transform: none;
+}
+
+/* Rail */
+.rail-brand {
+  background: var(--text);
+  color: var(--on-accent);
+  border-radius: 9px;
+}
+
+.rail-item.is-active {
+  color: var(--text);
+  background: var(--surface-hover);
+}
+
+.rail-item.is-active svg {
+  color: var(--text);
+}
+
+/* Selection states: hairline border in charcoal, never a colored fill */
+.mode-item.is-active,
+.segmented button.is-active,
+.filter-tabs button.is-active {
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  box-shadow: none;
+}
+
+.chip,
+.voice,
+.aspect,
+.recent-item {
+  border-radius: 7px;
+}
+
+.chip.is-active,
+.voice.is-active,
+.aspect.is-active,
+.recent-item.is-active {
+  color: var(--text);
+  background: var(--surface);
+  border-color: var(--text);
+}
+
+.thumb.is-active,
+.visual-card.is-active {
+  border-color: var(--text);
+  box-shadow: none;
+}
+
+.prompt-input:hover {
+  border-color: var(--border-strong);
+}
+
+.prompt-input:focus,
+.token-row input:focus {
+  border-color: var(--text);
+  box-shadow: none;
+  outline: none;
+}
+
+button:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--text) 35%, transparent);
+}
+
+.composer-heading svg {
+  color: var(--text);
+}
+
+/* Progress: one flat bar */
+.generation-progress,
+.export-progress {
+  background: var(--border);
+}
+
+.generation-progress span,
+.export-progress span,
+.mini-progress i {
+  background: var(--text);
+}
+
+/* Generation overlay: calm light sheet instead of a dark blurred glass */
+.generation-overlay {
+  color: var(--text);
+  background: var(--overlay);
+  backdrop-filter: none;
+}
+
+.generation-overlay > span {
+  color: var(--text-soft);
+}
+
+.generation-overlay small {
+  color: var(--muted);
+}
+
+.cancel-generation {
+  color: var(--text-soft);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+}
+
+.cancel-generation:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+}
+
+.generation-orb {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: none;
+  box-shadow: none;
+  border: 2px solid var(--border);
+  border-top-color: var(--text);
+  animation: quiet-spin 0.9s linear infinite;
+}
+
+@keyframes quiet-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Result areas: plain surfaces */
+.result-frame {
+  background: var(--panel);
+  border-color: var(--border);
+}
+
+/* Dialogs and toasts */
+.dialog-backdrop {
+  background: rgba(20, 20, 20, 0.28);
+  backdrop-filter: none;
+}
+
+.export-dialog {
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+}
+
+.export-icon {
+  color: var(--text);
+  background: var(--panel-muted);
+}
+
+.export-icon.is-done {
+  color: var(--success);
+  background: var(--success-soft);
+}
+
+.export-icon.is-error {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.toast {
+  color: var(--on-accent);
+  background: var(--text);
+  border: 0;
+  box-shadow: none;
+}
+
+.form-error {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.status-ok,
+.feature-list .ok {
+  color: var(--success);
+}
+
+.status-error,
+.is-danger-text {
+  color: var(--danger) !important;
+}
+
+.icon-button.is-danger {
+  color: #fff;
+  background: var(--danger);
+  border-color: var(--danger);
+}
+
+.link-button,
+.license-item a {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--border-strong);
+}
+
+/* Model gate: neutral card */
+.model-gate {
+  border-color: var(--border-strong);
+  background: var(--surface);
+}
+
+.model-gate-head {
+  color: var(--text);
+}
+
+.library-thumb {
+  color: var(--muted);
+  background: var(--panel-muted);
+}
+
+.placeholder-card > svg,
+.result-empty svg {
+  color: var(--muted);
+}
+
+.dropzone:hover,
+.dropzone.is-dragging {
+  color: var(--text);
+  border-color: var(--text);
+  background: var(--panel-muted);
+}
+
+/* Music player */
+.quiet-player {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 32px 36px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.quiet-player > .result-empty {
+  margin: auto;
+}
+
+.quiet-player header h2 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.quiet-player header p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.quiet-wave {
+  height: 72px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+}
+
+.quiet-wave i {
+  flex: 1;
+  min-width: 1px;
+  border-radius: 1px;
+  background: var(--border-strong);
+}
+
+.quiet-wave i.is-played {
+  background: var(--text);
+}
+
+.quiet-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.quiet-play {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: var(--on-accent);
+  background: var(--text);
+}
+
+.quiet-time {
+  margin-left: 6px;
+  color: var(--text-soft);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.quiet-volume-icon {
+  margin-left: auto;
+  color: var(--muted);
+}
+
+.volume-range {
+  accent-color: var(--text);
+}
+
+.quiet-lyrics {
+  flex: 1 1 auto;
+  margin: 0;
+  padding-top: 18px;
+  overflow: auto;
+  border-top: 1px solid var(--border);
+  color: var(--text-soft);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.9;
+  white-space: pre-wrap;
+}
+
+/* Export chooser */
+.visual-choice {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 20px 0 4px;
+}
+
+.visual-choice .thumb {
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 4px 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-soft);
+  font-size: 12px;
+}
+
+.visual-choice .thumb img {
+  aspect-ratio: 16 / 10;
+  border-radius: 6px;
+}
+
+.quiet-lyrics {
+  white-space: normal;
+}
+
+.quiet-lyrics p {
+  margin: 0;
+  color: var(--text);
+}
+
+.lyric-tag {
+  display: block;
+  margin: 10px 0 2px;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+.lyric-tag:first-child {
+  margin-top: 0;
+}
+
+/* Keep the main action reachable on short windows: it sticks to the panel bottom. */
+.composer-panel .generate-button {
+  position: sticky;
+  bottom: 14px;
+  z-index: 2;
+  box-shadow: 0 0 0 8px var(--panel);
+}

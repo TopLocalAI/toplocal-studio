@@ -1,0 +1,22 @@
+{
+  "comment": "Pinned upstream Windows x64 Vulkan builds bundled by build_windows.ps1. Update url and sha256 together.",
+  "audiocpp": {
+    "version": "v0.8.2",
+    "url": "https://github.com/0xShug0/audio.cpp/releases/download/v0.8.2/audio-v0.8.2-bin-windows-x64-vulkan.zip",
+    "sha256": "049278911b9fe4de7d9f87f7a869afbff4c4914a18b518c53d91762dcebe735e"
+  },
+  "silero_vad": {
+    "url": "https://raw.githubusercontent.com/0xShug0/audio.cpp/v0.8.2/assets/framework/models/silero_vad/silero_vad_16k.safetensors",
+    "sha256": "c59271c284ae9c8335d795d60e0bfdb71aaaceec578d9bd9ffc1b8153c319ea1"
+  },
+  "llama": {
+    "version": "b11155",
+    "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11155/llama-b11155-bin-win-vulkan-x64.zip",
+    "sha256": "901df55b19b574ee44c17a3434d9669a7be50447a4a0cd7f2ea071def0214dd1"
+  },
+  "sdcpp": {
+    "version": "master-908-88411ef",
+    "url": "https://github.com/leejet/stable-diffusion.cpp/releases/download/master-908-88411ef/sd-master-88411ef-bin-win-vulkan-x64.zip",
+    "sha256": "e9d089361a00bd30b1e23cc39d2a98745536688acbf5e9e68ce2498a548d07e1"
+  }
+}

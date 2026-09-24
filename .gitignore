@@ -1,0 +1,30 @@
+# This workspace also holds benchmarks, engine checkouts, model weights and outputs.
+# Only the product and its research reports are versioned (allowlist).
+/*
+!/.gitignore
+!/.github/
+!/README.md
+!/LICENSE
+!/NOTICE.md
+!/app/
+!/service/
+!/packaging/
+!/results/
+/results/*
+!/results/model-selection.md
+!/results/image-benchmark.md
+!/results/video-benchmark.md
+!/results/music-benchmark.md
+!/results/audio-benchmark.md
+
+# Build output and local state inside the product folders
+node_modules/
+app/dist/
+app/src-tauri/target/
+app/src-tauri/gen/
+app/src-tauri/generated/
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+ui-shots/
