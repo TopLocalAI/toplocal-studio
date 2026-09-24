@@ -22,6 +22,12 @@
 | 推理引擎 | MLX（图片、视频），audio.cpp Metal | stable-diffusion.cpp、audio.cpp、llama.cpp（Vulkan） |
 | 状态 | 已在 M5 Pro 64 GB 上完整测试 | GitHub Actions 自动构建；还没有在真实显卡上测试，视频为实验功能 |
 
+Windows 版的已知限制：
+
+- 需要安装显卡驱动。驱动会带上 Vulkan 运行库（`vulkan-1.dll`），音乐和语音引擎启动时要用到它。
+- 视频模型的文本编码器来自 Lightricks 官方仓库，需要先在 Hugging Face 同意许可证，再在设置里填写访问令牌。
+- Windows 用户名里有中文时，引擎读取模型的情况还没有验证。
+
 应用会按内存档位（16 / 32 / 64 GB）决定开放哪些功能。各模型的速度、内存和质量实测见 [`results/model-selection.md`](results/model-selection.md)。
 
 ## 下载
