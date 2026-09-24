@@ -769,3 +769,14 @@ button.token-tag {
 @media (max-width: 1180px) {
   .module-status { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* Settings: language and appearance side by side at the top */
+.settings-general {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 40px;
+}
+
+.general-item h2 {
+  margin-bottom: 10px;
+}

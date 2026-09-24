@@ -10,12 +10,13 @@ import time
 from PIL import Image
 
 from .. import catalog, config, system, uploads
+from ..i18n import tr
 from ..jobs import Job, JobFailed
 from . import llm, media, sdcpp
 
 PIXELS = {"480p": 832 * 480, "720p": 1280 * 704}
 SECONDS = {3: 73, 5: 121, 8: 193}  # LTX frame counts are 8k + 1
-STAGES = [  # stdout marker -> (progress, label)
+STAGES = [  # stdout marker -> (progress, label); labels are tr() keys
     ("[Loading text encoder", 5, "正在加载模型"),
     ("[Encoding prompt", 10, "正在理解描述"),
     ("[Loading transformer", 14, "正在加载视频模型"),
@@ -50,13 +51,13 @@ async def generate(job: Job) -> dict:
     p = job.params
     text = str(p.get("text", "")).strip()
     if not text:
-        raise JobFailed("请描述想看到的画面和动作")
+        raise JobFailed(tr("请描述想看到的画面和动作"))
     mem = system.memory_gb()
     if system.tier(mem) == "16":
-        raise JobFailed("视频生成需要 24 GB 以上内存，这台电脑暂不支持")
+        raise JobFailed(tr("视频生成需要 24 GB 以上内存，这台电脑暂不支持"))
     model = catalog.model_path("video.ltx25")
     if not catalog.installed("video.ltx25"):
-        raise JobFailed("视频模型未安装，请在设置里下载")
+        raise JobFailed(tr("视频模型未安装，请在设置里下载"))
     seconds = int(p.get("seconds", 5)) if int(p.get("seconds", 5)) in SECONDS else 5
     resolution = p.get("resolution") if p.get("resolution") in PIXELS else "480p"
     seed = int(p.get("seed") or random.randint(1, 2**31 - 1))
@@ -66,7 +67,7 @@ async def generate(job: Job) -> dict:
 
     prompt = text
     if p.get("enhance", True) and catalog.installed("llm.writer"):
-        job.update(2, "正在补充镜头描述")
+        job.update(2, tr("正在补充镜头描述"))
         prompt = await llm.video_prompt(job, text, bool(p.get("source")), _source_description(p.get("source")))
         (job.dir / "prompt.txt").write_text(prompt, encoding="utf-8")
     aspect, first = 16 / 9, None
@@ -77,7 +78,7 @@ async def generate(job: Job) -> dict:
             im = im.convert("RGB")
             aspect = im.width / im.height
             im.save(first)
-        job.title = "动起来 · " + text[:12]
+        job.title = tr("动起来 · {text}", text=text[:12])
     width, height = _size(aspect, PIXELS[resolution])
     job.save()
     out = job.dir / "video.mp4"
@@ -86,7 +87,7 @@ async def generate(job: Job) -> dict:
     else:
         await _generate_mlx(job, model, prompt, seconds, width, height, seed, first, mem)
     if not out.exists():
-        raise JobFailed("生成完成，但没有找到视频")
+        raise JobFailed(tr("生成完成，但没有找到视频"))
     return {"video": "video.mp4", "duration": await media.probe_duration(out), "width": width, "height": height,
             "poster": "first-frame.png" if first else None, "prompt": prompt}
 
@@ -105,8 +106,8 @@ async def _generate_sdcpp(job: Job, prompt, seconds, width, height, seed, first)
     await sdcpp.run(job, args, steps=8, expected=expected, span=(18, 85), label="正在生成画面与声音",
                     decode_label="正在解码视频", log_name="ltx.log")
     if not raw.exists():
-        raise JobFailed("生成完成，但没有找到视频")
-    job.update(92, "正在合成视频与声音")
+        raise JobFailed(tr("生成完成，但没有找到视频"))
+    job.update(92, tr("正在合成视频与声音"))
     await job.run([config.FFMPEG, "-y", "-v", "error", "-i", raw, "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18",
                    "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", job.dir / "video.mp4"],
                   log_name="ffmpeg.log")
@@ -131,14 +132,14 @@ async def _generate_mlx(job: Job, model, prompt, seconds, width, height, seed, f
     def on_line(line: str) -> None:
         for marker, prog, label in STAGES:
             if line.startswith(marker):
-                job.update(prog, label)
+                job.update(prog, tr(label))
 
     async def tick():
         while True:
             await asyncio.sleep(1)
             if 18 <= job.progress < 82:  # denoising has no step output: interpolate by time
                 frac = min(0.95, (time.time() - start) / (expected * 0.8))
-                job.update(18 + 64 * frac, "正在生成画面与声音")
+                job.update(18 + 64 * frac, tr("正在生成画面与声音"))
 
     ticker = asyncio.create_task(tick())
     try:

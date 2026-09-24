@@ -17,6 +17,7 @@ from urllib.parse import quote
 import aiohttp
 
 from . import catalog, config, settings
+from .i18n import tr
 
 def _ssl_context():
     """Prefer the certifi bundle shipped with the runtime; fall back to the system store."""
@@ -77,9 +78,9 @@ async def _list_files(session: aiohttp.ClientSession, source: dict) -> list[dict
         url += "/" + quote(source["sub"])
     async with session.get(url + "?recursive=true", headers=_headers()) as r:
         if r.status in (401, 403):
-            raise DownloadError("这个模型需要先在 Hugging Face 上同意许可证，并在设置里填写访问令牌")
+            raise DownloadError(tr("这个模型需要先在 Hugging Face 上同意许可证，并在设置里填写访问令牌"))
         if r.status != 200:
-            raise DownloadError(f"无法获取模型文件列表（{r.status}）")
+            raise DownloadError(tr("无法获取模型文件列表（{status}）", status=r.status))
         items = [f for f in await r.json() if f.get("type") == "file"]
     # include/exclude patterns match the path below `sub`.
     inc, exc = source.get("include"), source.get("exclude")
@@ -100,7 +101,7 @@ async def _fetch_range(session, url, path: Path, start: int, end: int, dl: Downl
         try:
             async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(sock_read=60)) as r:
                 if r.status not in (200, 206):
-                    raise DownloadError(f"下载服务器返回 {r.status}")
+                    raise DownloadError(tr("下载服务器返回 {status}", status=r.status))
                 with open(path, "ab") as out:
                     async for chunk in r.content.iter_chunked(CHUNK):
                         if dl.state == "cancelled":
@@ -142,14 +143,14 @@ async def _fetch_file(session, source: dict, f: dict, dl: Download) -> None:
         p.unlink(missing_ok=True)
     if size and part.stat().st_size != size:
         part.unlink(missing_ok=True)
-        raise DownloadError(f"{dest.name} 大小不对，请重试")
+        raise DownloadError(tr("{name} 大小不对，请重试", name=dest.name))
     if f["sha256"]:
         dl.state = "verifying"
         digest = await asyncio.to_thread(_sha256, part)
         dl.state = "running"
         if digest != f["sha256"]:
             part.unlink(missing_ok=True)
-            raise DownloadError(f"{dest.name} 校验失败，文件已删除，请重试")
+            raise DownloadError(tr("{name} 校验失败，文件已删除，请重试", name=dest.name))
     part.replace(dest)
 
 
@@ -194,7 +195,7 @@ class DownloadManager:
                                     for p in f["dest"].parent.glob(f["dest"].name + ".part*"))
                 free = shutil.disk_usage(config.MODELS_DIR if config.MODELS_DIR.exists() else config.DATA_DIR).free
                 if dl.total_bytes - dl.done_bytes > free - 2 * 1024**3:
-                    raise DownloadError(f"磁盘空间不足：需要约 {dl.total_bytes / 1024**3:.1f} GB")
+                    raise DownloadError(tr("磁盘空间不足：需要约 {size} GB", size=f"{dl.total_bytes / 1024**3:.1f}"))
                 for source, f in todo:
                     if dl.state == "cancelled":
                         return
@@ -210,7 +211,7 @@ class DownloadManager:
         except DownloadError as exc:
             dl.state, dl.error = "error", str(exc)
         except Exception as exc:  # network stack errors
-            dl.state, dl.error = "error", f"下载失败：{exc}"[:200]
+            dl.state, dl.error = "error", tr("下载失败：{error}", error=exc)[:200]
 
 
 def _manifest_path(model_id: str) -> Path:

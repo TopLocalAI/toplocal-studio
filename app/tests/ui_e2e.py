@@ -94,8 +94,7 @@ def image_generate(page):
     page.locator("#img-text").fill("一只纸鹤停在木桌上，柔和的晨光")
     page.get_by_role("radio", name="极速").click()
     page.get_by_role("button", name="生成图片").click()
-    expect(page.locator(".generation-overlay")).to_be_visible(timeout=10_000)
-    expect(page.locator(".generation-overlay")).to_be_hidden(timeout=LONG)
+    wait_job(page)
     expect(page.locator(".result-image")).to_be_visible()
     page.screenshot(path=SHOTS / "image-result.png")
 
@@ -120,8 +119,7 @@ def video_generate(page):
     page.locator("#video-text").fill("晨光慢慢移动，纸鹤轻轻晃动")
     page.get_by_role("radio", name="3 秒").click()
     page.get_by_role("button", name="生成视频").click()
-    expect(page.locator(".generation-overlay")).to_be_visible(timeout=10_000)
-    expect(page.locator(".generation-overlay")).to_be_hidden(timeout=LONG)
+    wait_job(page)
     expect(page.locator("video.result-video")).to_be_visible()
     page.screenshot(path=SHOTS / "video-result.png")
 
@@ -312,6 +310,7 @@ def main() -> int:
     with sync_playwright() as p:
         browser = p.webkit.launch()
         page = browser.new_page(viewport={"width": 1440, "height": 900})
+        page.add_init_script("localStorage.setItem('toplocal-language', 'zh')")  # tests use the Chinese labels
         page.on("console", lambda m: errors.append(f"console.{m.type}: {m.text}") if m.type == "error" else None)
         page.on("pageerror", lambda e: errors.append(f"pageerror: {e}"))
         page.goto(BASE)

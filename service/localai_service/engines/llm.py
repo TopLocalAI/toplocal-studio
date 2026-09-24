@@ -2,6 +2,7 @@
 import re
 
 from .. import catalog, config
+from ..i18n import tr
 from ..jobs import Job, JobFailed
 
 LYRICS_SYSTEM = (
@@ -22,7 +23,7 @@ async def complete(job: Job, system: str, user: str, *, max_tokens: int = 700, t
                    seed: int = -1) -> str:
     model = catalog.model_path("llm.writer")
     if model is None:
-        raise JobFailed("写作助手模型未安装，请在设置里下载后再试，或切换到“我的歌词”模式")
+        raise JobFailed(tr("写作助手模型未安装，请在设置里下载后再试，或切换到“我的歌词”模式"))
     out = await job.run([
         config.LLAMA_COMPLETION, "-m", model, "-p", _chatml(system, user), "-no-cnv", "--no-display-prompt",
         "-n", str(max_tokens), "--temp", str(temperature), "-s", str(seed), "-ngl", "99", "-c", "4096",
@@ -57,7 +58,7 @@ async def write_lyrics(job: Job, description: str, styles: list[str], seed: int)
             for l in lyrics.splitlines()
         )
     if "[" not in lyrics or len(lyrics) < 20:
-        raise JobFailed("歌词生成失败，请换个描述再试一次")
+        raise JobFailed(tr("歌词生成失败，请换个描述再试一次"))
     return lyrics
 
 

@@ -8,6 +8,7 @@ import uuid
 from pathlib import Path
 
 from . import config
+from .i18n import tr
 from .jobs import JobFailed
 
 IMAGE_EXT = {".png", ".jpg", ".jpeg", ".webp", ".heic", ".bmp"}
@@ -53,4 +54,4 @@ def resolve(ref) -> Path:
                 path = config.LIBRARY_DIR / job_id / name
                 if path.is_file():
                     return path
-    raise JobFailed("找不到输入文件，请重新选择")
+    raise JobFailed(tr("找不到输入文件，请重新选择"))

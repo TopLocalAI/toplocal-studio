@@ -6,6 +6,7 @@ import { JobOverlay } from "../components/JobOverlay";
 import { ModelGate } from "../components/ModelGate";
 import { Toast, useToast } from "../components/Toast";
 import { useJob } from "../hooks/useJob";
+import { t } from "../i18n";
 
 const ASPECTS = ["1:1", "4:3", "3:4", "16:9", "9:16"];
 const STYLES = ["写实照片", "插画", "动漫", "3D", "水墨", "海报", "电影感"];
@@ -45,7 +46,7 @@ export function ImagePage({ features, serviceReady, onAnimate , onModelsChanged 
     if (finished.status === "done") {
       setCurrent(finished);
       loadRecent();
-    } else if (finished.status === "error") setError(finished.error || "生成失败");
+    } else if (finished.status === "error") setError(finished.error || t("生成失败"));
   });
 
   const run = async (overrides = {}) => {
@@ -69,24 +70,24 @@ export function ImagePage({ features, serviceReady, onAnimate , onModelsChanged 
 
   const canRun =
     serviceReady && !job.running && (mode === "generate" ? text.trim() && createReady : editText.trim() && source && editReady);
-  const estimate = mode === "generate" ? (quality === "fast" ? "约 15 秒" : "约 40 秒") : "约 20–40 秒";
+  const estimate = mode === "generate" ? (quality === "fast" ? t("约 15 秒") : t("约 40 秒")) : t("约 20–40 秒");
 
   return (
     <div className="studio">
-      <aside className="composer-panel" aria-label="图片创作">
+      <aside className="composer-panel" aria-label={t("图片创作")}>
         <div className="composer-heading">
           <Sparkle size={24} weight="fill" />
-          <h1>画一张图</h1>
+          <h1>{t("画一张图")}</h1>
         </div>
 
         <div className="mode-switch mode-switch-2" role="tablist">
           <button type="button" role="tab" aria-selected={mode === "generate"} className={mode === "generate" ? "mode-item is-active" : "mode-item"} onClick={() => setMode("generate")}>
             <MagicWand size={20} />
-            <span>生成</span>
+            <span>{t("生成")}</span>
           </button>
           <button type="button" role="tab" aria-selected={mode === "edit"} className={mode === "edit" ? "mode-item is-active" : "mode-item"} onClick={() => setMode("edit")}>
             <PencilSimple size={20} />
-            <span>编辑</span>
+            <span>{t("编辑")}</span>
           </button>
         </div>
 
@@ -94,7 +95,7 @@ export function ImagePage({ features, serviceReady, onAnimate , onModelsChanged 
           <>
             <div className="field-group prompt-group">
               <div className="field-label-row">
-                <label htmlFor="img-text">描述画面</label>
+                <label htmlFor="img-text">{t("描述画面")}</label>
                 <span>{text.length} / 500</span>
               </div>
               <textarea
@@ -102,23 +103,23 @@ export function ImagePage({ features, serviceReady, onAnimate , onModelsChanged 
                 className="prompt-input"
                 maxLength={500}
                 value={text}
-                placeholder="例如：一张咖啡馆菜单海报，标题写着“秋日限定”，下方是南瓜拿铁的插画"
+                placeholder={t("例如：一张咖啡馆菜单海报，标题写着“秋日限定”，下方是南瓜拿铁的插画")}
                 onChange={(e) => setText(e.target.value)}
               />
-              <small className="field-hint">想让图里出现文字，就用引号写出来</small>
+              <small className="field-hint">{t("想让图里出现文字，就用引号写出来")}</small>
             </div>
             <div className="field-group">
-              <span className="field-label">风格</span>
+              <span className="field-label">{t("风格")}</span>
               <div className="style-chips">
                 {STYLES.map((s) => (
                   <button key={s} type="button" className={styles.includes(s) ? "chip is-active" : "chip"} aria-pressed={styles.includes(s)} onClick={() => setStyles((l) => (l.includes(s) ? l.filter((x) => x !== s) : [...l, s].slice(-3)))}>
-                    {s}
+                    {t(s)}
                   </button>
                 ))}
               </div>
             </div>
             <div className="field-group">
-              <span className="field-label">画面比例</span>
+              <span className="field-label">{t("画面比例")}</span>
               <div className="aspect-row">
                 {ASPECTS.map((a) => {
                   const [w, h] = a.split(":").map(Number);
@@ -132,15 +133,15 @@ export function ImagePage({ features, serviceReady, onAnimate , onModelsChanged 
               </div>
             </div>
             <div className="field-group">
-              <span className="field-label">模式</span>
+              <span className="field-label">{t("模式")}</span>
               <div className="segmented" role="radiogroup">
                 <button type="button" role="radio" aria-checked={quality === "standard"} className={quality === "standard" ? "is-active" : ""} onClick={() => setQuality("standard")}>
-                  <strong>精细</strong>
-                  <small>画质好，中英文字准确</small>
+                  <strong>{t("精细")}</strong>
+                  <small>{t("画质好，中英文字准确")}</small>
                 </button>
                 <button type="button" role="radio" aria-checked={quality === "fast"} className={quality === "fast" ? "is-active" : ""} onClick={() => setQuality("fast")}>
-                  <strong>极速</strong>
-                  <small>约 15 秒，不适合写字</small>
+                  <strong>{t("极速")}</strong>
+                  <small>{t("约 15 秒，不适合写字")}</small>
                 </button>
               </div>
             </div>
@@ -148,19 +149,19 @@ export function ImagePage({ features, serviceReady, onAnimate , onModelsChanged 
         ) : (
           <>
             <div className="field-group">
-              <span className="field-label">要修改的图片</span>
-              <SourcePicker value={source} onChange={setSource} label="上传一张图片" />
+              <span className="field-label">{t("要修改的图片")}</span>
+              <SourcePicker value={source} onChange={setSource} label={t("上传一张图片")} />
             </div>
             <div className="field-group prompt-group">
               <div className="field-label-row">
-                <label htmlFor="img-edit">想怎么改</label>
+                <label htmlFor="img-edit">{t("想怎么改")}</label>
               </div>
               <textarea
                 id="img-edit"
                 className="prompt-input prompt-short"
                 maxLength={300}
                 value={editText}
-                placeholder="例如：把招牌上的字改成“TopLocal Studio”，换成下雪的冬夜"
+                placeholder={t("例如：把招牌上的字改成“TopLocal Studio”，换成下雪的冬夜")}
                 onChange={(e) => setEditText(e.target.value)}
               />
             </div>
@@ -169,10 +170,10 @@ export function ImagePage({ features, serviceReady, onAnimate , onModelsChanged 
 
         <button type="button" className="generate-button" disabled={!canRun} onClick={() => run()}>
           <Sparkle size={21} weight="fill" />
-          <span>{job.running ? "正在生成…" : mode === "generate" ? "生成图片" : "开始修改"}</span>
+          <span>{job.running ? t("正在生成…") : mode === "generate" ? t("生成图片") : t("开始修改")}</span>
         </button>
         <p className="generate-note">
-          {!serviceReady ? "正在连接本地引擎" : !createReady ? "图片模型未安装，请到设置里下载" : `预计${estimate}，全部在本机完成`}
+          {!serviceReady ? t("正在连接本地引擎") : !createReady ? t("图片模型未安装，请到设置里下载") : t("预计{estimate}，全部在本机完成", { estimate })}
         </p>
         {error ? <p className="form-error" role="alert">{error}</p> : null}
         {serviceReady ? <ModelGate features={features} featureIds={mode === "generate" ? ["image.create"] : ["image.edit"]} onInstalled={onModelsChanged} /> : null}
@@ -185,7 +186,7 @@ export function ImagePage({ features, serviceReady, onAnimate , onModelsChanged 
           ) : (
             <div className="result-empty">
               <MagicWand size={40} weight="duotone" />
-              <p>描述一个画面，点“生成图片”</p>
+              <p>{t("描述一个画面，点“生成图片”")}</p>
             </div>
           )}
           <JobOverlay job={job} />
@@ -193,23 +194,23 @@ export function ImagePage({ features, serviceReady, onAnimate , onModelsChanged 
         {current ? (
           <div className="song-actions">
             <button type="button" className="button button-secondary" onClick={() => saveResult(current.id, current.result.image, current.title).then(toast.show, (e) => setError(e.message))}>
-              <DownloadSimple size={18} /> 下载
+              <DownloadSimple size={18} /> {t("下载")}
             </button>
             {current.task === "generate" ? (
               <button type="button" className="button button-secondary" disabled={job.running} onClick={() => { setMode("generate"); job.submit("image", "generate", { ...current.params, seed: 0 }).catch((e) => setError(e.message)); }}>
-                <ArrowsClockwise size={18} /> 换一张
+                <ArrowsClockwise size={18} /> {t("换一张")}
               </button>
             ) : null}
             <button type="button" className="button button-secondary" onClick={editThis}>
-              <PencilSimple size={18} /> 编辑这张
+              <PencilSimple size={18} /> {t("编辑这张")}
             </button>
             <button type="button" className="button button-secondary" onClick={() => onAnimate({ library: current.id, file: current.result.image, preview: fileUrl(current.id, current.result.image) })}>
-              <FilmSlate size={18} /> 让它动起来
+              <FilmSlate size={18} /> {t("让它动起来")}
             </button>
           </div>
         ) : null}
         {recent.length > 1 ? (
-          <div className="thumb-strip" aria-label="最近生成">
+          <div className="thumb-strip" aria-label={t("最近生成")}>
             {recent.slice(0, 12).map((item) => (
               <button key={item.id} type="button" className={current?.id === item.id ? "thumb is-active" : "thumb"} onClick={() => setCurrent(item)} title={item.title}>
                 <img src={fileUrl(item.id, item.result.image)} alt={item.title} />

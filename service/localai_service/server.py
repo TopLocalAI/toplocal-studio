@@ -11,6 +11,7 @@ from urllib.parse import urlparse
 from aiohttp import web
 
 from . import __version__, catalog, config, downloads, jobs, procs, settings, system, uploads
+from .i18n import tr
 from .engines import image, music, speech, video
 
 MANAGER: jobs.JobManager | None = None
@@ -92,7 +93,7 @@ async def open_url(request):
     url = str(body.get("url", ""))
     parsed = urlparse(url)
     if parsed.scheme != "https" or parsed.hostname not in OPEN_HOSTS:
-        return web.json_response({"error": "不支持打开这个链接"}, status=400)
+        return web.json_response({"error": tr("不支持打开这个链接")}, status=400)
     webbrowser.open(url)
     return web.json_response({"ok": True})
 
@@ -101,7 +102,7 @@ async def download_model(request):
     try:
         dl = DOWNLOADS.start(request.match_info["id"])
     except KeyError:
-        raise web.HTTPNotFound(reason="模型不存在")
+        raise web.HTTPNotFound(reason=tr("模型不存在"))
     return web.json_response(dl.public(), status=202)
 
 
@@ -113,11 +114,11 @@ async def cancel_download(request):
 async def delete_model(request):
     model_id = request.match_info["id"]
     if any(j.status in jobs.ACTIVE for j in MANAGER.jobs.values()):
-        return web.json_response({"error": "有任务正在进行，请完成后再删除模型"}, status=409)
+        return web.json_response({"error": tr("有任务正在进行，请完成后再删除模型")}, status=409)
     try:
         downloads.remove(model_id)
     except KeyError:
-        raise web.HTTPNotFound(reason="模型不存在")
+        raise web.HTTPNotFound(reason=tr("模型不存在"))
     DOWNLOADS.downloads.pop(model_id, None)
     return web.json_response({"ok": True})
 
@@ -132,7 +133,7 @@ async def put_settings(request):
 
 
 async def voices(_):
-    return web.json_response({"voices": [{"id": k, "name": v} for k, v in speech.KOKORO_VOICES.items()]})
+    return web.json_response({"voices": [{"id": k, "name": tr(v)} for k, v in speech.KOKORO_VOICES.items()]})
 
 
 async def create_job(request: web.Request):
@@ -141,14 +142,14 @@ async def create_job(request: web.Request):
     try:
         job = MANAGER.submit(module, task, dict(body.get("params") or {}))
     except KeyError:
-        return web.json_response({"error": "未知的任务类型"}, status=400)
+        return web.json_response({"error": tr("未知的任务类型")}, status=400)
     return web.json_response(job.public(), status=202)
 
 
 def _job_or_404(request: web.Request) -> jobs.Job:
     job = MANAGER.get(request.match_info["id"])
     if job is None:
-        raise web.HTTPNotFound(reason="任务不存在")
+        raise web.HTTPNotFound(reason=tr("任务不存在"))
     return job
 
 
@@ -173,10 +174,10 @@ async def library(request):
 async def delete_item(request):
     item_id = request.match_info["id"]
     if not JOB_ID.match(item_id):
-        raise web.HTTPNotFound(reason="作品不存在")
+        raise web.HTTPNotFound(reason=tr("作品不存在"))
     job = MANAGER.get(item_id)
     if job and job.status in jobs.ACTIVE:
-        return web.json_response({"error": "任务仍在进行，请先取消"}, status=409)
+        return web.json_response({"error": tr("任务仍在进行，请先取消")}, status=409)
     shutil.rmtree(config.LIBRARY_DIR / item_id, ignore_errors=True)
     MANAGER.jobs.pop(item_id, None)
     return web.json_response({"ok": True})
@@ -192,10 +193,10 @@ async def save_item(request):
     body = await request.json()
     name = str(body.get("file", ""))
     if not JOB_ID.match(item_id) or not FILE_NAME.match(name):
-        raise web.HTTPNotFound(reason="文件不存在")
+        raise web.HTTPNotFound(reason=tr("文件不存在"))
     src = config.LIBRARY_DIR / item_id / name
     if not src.is_file():
-        raise web.HTTPNotFound(reason="文件不存在")
+        raise web.HTTPNotFound(reason=tr("文件不存在"))
     title = re.sub(r'[\\/:*?"<>|\n]+', " ", str(body.get("title") or item_id)).strip()[:60] or item_id
     target_dir = _downloads_dir()
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -215,10 +216,10 @@ async def upload(request: web.Request):
     reader = await request.multipart()
     field = await reader.next()
     if field is None or not field.filename:
-        return web.json_response({"error": "没有收到文件"}, status=400)
+        return web.json_response({"error": tr("没有收到文件")}, status=400)
     kind = uploads.kind_of(field.filename)
     if kind is None:
-        return web.json_response({"error": "不支持这种文件格式"}, status=400)
+        return web.json_response({"error": tr("不支持这种文件格式")}, status=400)
     upload_id, path = uploads.new_path(field.filename)
     size = 0
     with open(path, "wb") as out:
@@ -227,7 +228,7 @@ async def upload(request: web.Request):
             if size > uploads.MAX_BYTES:
                 out.close()
                 path.unlink(missing_ok=True)
-                return web.json_response({"error": "文件太大（上限 2 GB）"}, status=413)
+                return web.json_response({"error": tr("文件太大（上限 2 GB）")}, status=413)
             out.write(chunk)
     info = {"id": upload_id, "kind": kind, "name": field.filename, "file": path.name, "size": size}
     if kind == "image":
@@ -239,7 +240,7 @@ async def upload(request: web.Request):
                 info["width"], info["height"] = im.size
         except Exception:
             path.unlink(missing_ok=True)
-            return web.json_response({"error": "图片文件已损坏或无法识别"}, status=400)
+            return web.json_response({"error": tr("图片文件已损坏或无法识别")}, status=400)
     return web.json_response(info, status=201)
 
 
@@ -247,17 +248,17 @@ async def serve_upload(request):
     name = request.match_info["name"]
     path = uploads.find_upload(name.split(".")[0])
     if path is None or path.name != name:
-        raise web.HTTPNotFound(reason="文件不存在")
+        raise web.HTTPNotFound(reason=tr("文件不存在"))
     return _file_response(path)
 
 
 async def serve_file(request):
     item_id, name = request.match_info["id"], request.match_info["name"]
     if not JOB_ID.match(item_id) or not FILE_NAME.match(name) or name.endswith((".json", ".log", ".err")):
-        raise web.HTTPNotFound(reason="文件不存在")
+        raise web.HTTPNotFound(reason=tr("文件不存在"))
     path = config.LIBRARY_DIR / item_id / name
     if not path.is_file():
-        raise web.HTTPNotFound(reason="文件不存在")
+        raise web.HTTPNotFound(reason=tr("文件不存在"))
     response = _file_response(path)
     if request.query.get("download"):
         response.headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{name}"

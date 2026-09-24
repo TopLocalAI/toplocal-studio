@@ -17,14 +17,10 @@ import { MusicPlayer } from "../components/MusicPlayer";
 import { MUSIC_MODES, MUSIC_STYLES, VISUAL_STYLES } from "../data";
 import { useAudioPlayer } from "../hooks/useAudioPlayer";
 import { useJob } from "../hooks/useJob";
+import { t } from "../i18n";
 
 const MODE_ICONS = { prompt: ChatCircleDots, lyrics: FileText, instrumental: MusicNotes };
-const DURATIONS = [
-  { value: 60, label: "1 分钟" },
-  { value: 120, label: "2 分钟" },
-  { value: 180, label: "3 分钟" },
-  { value: 240, label: "4 分钟" },
-];
+const DURATIONS = [60, 120, 180, 240];
 
 function estimate(engine, mode, duration, text) {
   if (engine === "chinese" && mode !== "instrumental") {
@@ -36,7 +32,8 @@ function estimate(engine, mode, duration, text) {
 
 export function MusicPage({ features, serviceReady , onModelsChanged }) {
   const [mode, setMode] = useState("prompt");
-  const [texts, setTexts] = useState(() => Object.fromEntries(MUSIC_MODES.map((m) => [m.id, m.defaultValue])));
+  // Unedited modes fall back to the default text in the current UI language.
+  const [texts, setTexts] = useState({});
   const [styles, setStyles] = useState(["华语流行", "温柔", "女声"]);
   const [duration, setDuration] = useState(120);
   const [engine, setEngine] = useState("standard");
@@ -59,7 +56,7 @@ export function MusicPage({ features, serviceReady , onModelsChanged }) {
   const chineseReady = feature("music.chinese")?.ready;
   const writerReady = feature("music.writer")?.ready;
   const modeInfo = MUSIC_MODES.find((m) => m.id === mode);
-  const text = texts[mode];
+  const text = texts[mode] ?? t(modeInfo.defaultValue);
   const effectiveEngine = mode === "instrumental" ? "standard" : engine;
 
   const loadRecent = useCallback(async () => {
@@ -82,7 +79,7 @@ export function MusicPage({ features, serviceReady , onModelsChanged }) {
       setSong(finished);
       loadRecent();
     } else if (finished.status === "error") {
-      setError(finished.error || "生成失败");
+      setError(finished.error || t("生成失败"));
     }
   });
 
@@ -104,13 +101,13 @@ export function MusicPage({ features, serviceReady , onModelsChanged }) {
     (effectiveEngine === "chinese" && !chineseReady) ||
     (mode === "prompt" && !writerReady);
   const blockedReason = !serviceReady
-    ? "正在连接本地引擎"
+    ? t("正在连接本地引擎")
     : effectiveEngine === "chinese" && !chineseReady
-      ? "中文精唱模型未安装"
+      ? t("中文精唱模型未安装")
       : !standardReady
-        ? "音乐模型未安装"
+        ? t("音乐模型未安装")
         : mode === "prompt" && !writerReady
-          ? "一句话写歌需要先下载写作助手"
+          ? t("一句话写歌需要先下载写作助手")
           : "";
 
   const start = async () => {
@@ -124,7 +121,7 @@ export function MusicPage({ features, serviceReady , onModelsChanged }) {
 
   const startExport = async () => {
     if (!song) return;
-    setExportState({ open: true, status: "running", progress: 0, label: "正在准备", result: null });
+    setExportState({ open: true, status: "running", progress: 0, label: t("正在准备"), result: null });
     try {
       await exporter.submit("music", "export-video", { source: song.id, visual });
     } catch (e) {
@@ -139,13 +136,13 @@ export function MusicPage({ features, serviceReady , onModelsChanged }) {
 
   return (
     <div className="studio music-page">
-      <aside className="composer-panel" aria-label="歌曲创作">
+      <aside className="composer-panel" aria-label={t("歌曲创作")}>
         <div className="composer-heading">
           <Sparkle size={24} weight="fill" />
-          <h1>写一首歌</h1>
+          <h1>{t("写一首歌")}</h1>
         </div>
 
-        <div className="mode-switch" role="tablist" aria-label="创作方式">
+        <div className="mode-switch" role="tablist" aria-label={t("创作方式")}>
           {MUSIC_MODES.map((m) => {
             const Icon = MODE_ICONS[m.id];
             return (
@@ -158,7 +155,7 @@ export function MusicPage({ features, serviceReady , onModelsChanged }) {
                 onClick={() => setMode(m.id)}
               >
                 <Icon size={20} />
-                <span>{m.label}</span>
+                <span>{t(m.label)}</span>
               </button>
             );
           })}
@@ -166,7 +163,7 @@ export function MusicPage({ features, serviceReady , onModelsChanged }) {
 
         <div className="field-group prompt-group">
           <div className="field-label-row">
-            <label htmlFor="song-text">{modeInfo.inputLabel}</label>
+            <label htmlFor="song-text">{t(modeInfo.inputLabel)}</label>
             <span>
               {text.length} / {modeInfo.maxLength}
             </span>
@@ -175,14 +172,14 @@ export function MusicPage({ features, serviceReady , onModelsChanged }) {
             id="song-text"
             value={text}
             maxLength={modeInfo.maxLength}
-            placeholder={modeInfo.placeholder}
+            placeholder={t(modeInfo.placeholder)}
             className={mode === "lyrics" ? "prompt-input is-lyrics" : "prompt-input"}
-            onChange={(e) => setTexts((t) => ({ ...t, [mode]: e.target.value }))}
+            onChange={(e) => setTexts((prev) => ({ ...prev, [mode]: e.target.value }))}
           />
         </div>
 
         <div className="field-group">
-          <span className="field-label">风格（最多 4 个）</span>
+          <span className="field-label">{t("风格（最多 4 个）")}</span>
           <div className="style-chips">
             {MUSIC_STYLES.map((s) => (
               <button
@@ -192,7 +189,7 @@ export function MusicPage({ features, serviceReady , onModelsChanged }) {
                 aria-pressed={styles.includes(s)}
                 onClick={() => toggleStyle(s)}
               >
-                {s}
+                {t(s)}
               </button>
             ))}
           </div>
@@ -200,8 +197,8 @@ export function MusicPage({ features, serviceReady , onModelsChanged }) {
 
         {mode !== "instrumental" ? (
           <div className="field-group">
-            <span className="field-label">演唱</span>
-            <div className="segmented" role="radiogroup" aria-label="演唱引擎">
+            <span className="field-label">{t("演唱")}</span>
+            <div className="segmented" role="radiogroup" aria-label={t("演唱引擎")}>
               <button
                 type="button"
                 role="radio"
@@ -209,8 +206,8 @@ export function MusicPage({ features, serviceReady , onModelsChanged }) {
                 className={engine === "standard" ? "is-active" : ""}
                 onClick={() => setEngine("standard")}
               >
-                <strong>标准</strong>
-                <small>速度快，可定时长</small>
+                <strong>{t("标准")}</strong>
+                <small>{t("速度快，可定时长")}</small>
               </button>
               <button
                 type="button"
@@ -220,8 +217,8 @@ export function MusicPage({ features, serviceReady , onModelsChanged }) {
                 onClick={() => setEngine("chinese")}
                 disabled={!chineseReady}
               >
-                <strong>中文精唱</strong>
-                <small>{chineseReady ? "咬字最准，时长随歌词" : "未安装"}</small>
+                <strong>{t("中文精唱")}</strong>
+                <small>{chineseReady ? t("咬字最准，时长随歌词") : t("未安装")}</small>
               </button>
             </div>
           </div>
@@ -229,12 +226,12 @@ export function MusicPage({ features, serviceReady , onModelsChanged }) {
 
         {effectiveEngine === "standard" ? (
           <div className="field-group duration-group">
-            <label htmlFor="song-duration" className="field-label">时长</label>
+            <label htmlFor="song-duration" className="field-label">{t("时长")}</label>
             <div className="select-wrap">
               <Timer size={19} />
               <select id="song-duration" value={duration} onChange={(e) => setDuration(Number(e.target.value))}>
                 {DURATIONS.map((d) => (
-                  <option key={d.value} value={d.value}>{d.label}</option>
+                  <option key={d} value={d}>{t("{n} 分钟", { n: d / 60 })}</option>
                 ))}
               </select>
             </div>
@@ -248,10 +245,10 @@ export function MusicPage({ features, serviceReady , onModelsChanged }) {
           onClick={start}
         >
           <Sparkle size={21} weight="fill" />
-          <span>{generation.running ? "正在生成…" : "生成歌曲"}</span>
+          <span>{generation.running ? t("正在生成…") : t("生成歌曲")}</span>
         </button>
         <p className="generate-note">
-          {blockedReason || `预计约 ${formatDuration(expected)}，全部在本机完成`}
+          {blockedReason || t("预计约 {time}，全部在本机完成", { time: formatDuration(expected) })}
         </p>
         {error ? <p className="form-error" role="alert">{error}</p> : null}
         {serviceReady ? <ModelGate features={features} featureIds={effectiveEngine === "chinese" ? ["music.chinese"] : mode === "prompt" ? ["music.standard", "music.writer"] : ["music.standard"]} onInstalled={onModelsChanged} /> : null}
@@ -262,17 +259,17 @@ export function MusicPage({ features, serviceReady , onModelsChanged }) {
         <MusicPlayer song={song} player={player} overlay={<JobOverlay job={generation} />} />
         <div className="song-actions">
           <button type="button" className="button button-secondary" disabled={!song} onClick={() => save(song.id, song.result.audio, song.title)}>
-            <DownloadSimple size={18} /> 下载音频
+            <DownloadSimple size={18} /> {t("下载音频")}
           </button>
           <button type="button" className="button button-secondary" disabled={!song} onClick={() => setExportState({ open: true, status: "choose" })}>
-            <FilmStrip size={18} /> 导出动效视频
+            <FilmStrip size={18} /> {t("导出动效视频")}
           </button>
         </div>
         {recent.length > 1 ? (
-          <div className="recent-strip recent-strip-flat" aria-label="最近生成">
+          <div className="recent-strip recent-strip-flat" aria-label={t("最近生成")}>
             {recent.slice(0, 8).map((item) => (
               <button key={item.id} type="button" className={song?.id === item.id ? "recent-item is-active" : "recent-item"} onClick={() => setSong(item)}>
-                <strong>{item.title || "未命名"}</strong>
+                <strong>{item.title || t("未命名")}</strong>
                 <span>{formatDuration(item.result?.duration)}</span>
               </button>
             ))}

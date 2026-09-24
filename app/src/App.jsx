@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "./api";
+import { useLanguage } from "./i18n";
 import { Rail } from "./components/Rail";
 import { LibraryPage } from "./pages/LibraryPage";
 import { ImagePage } from "./pages/ImagePage";
@@ -21,6 +22,7 @@ function initialTheme() {
 export function App() {
   const [page, setPage] = useState("music");
   const [theme, setTheme] = useState(initialTheme);
+  const [language, setLanguage] = useLanguage();
   const [system, setSystem] = useState(null);
   const [service, setService] = useState("checking");
   const [videoSource, setVideoSource] = useState(null); // image handed over from the image page
@@ -67,6 +69,20 @@ export function App() {
     setPage("settings");
   }, []);
 
+  // The service writes progress labels and errors in the UI language.
+  // Once saved, reload what the service translates (feature and model names).
+  const [serviceLanguage, setServiceLanguage] = useState(null);
+  useEffect(() => {
+    if (service !== "ready") return;
+    api
+      .saveSettings({ language })
+      .then(() => {
+        setServiceLanguage(language);
+        refreshSystem();
+      })
+      .catch(() => {});
+  }, [language, service, refreshSystem]);
+
   const features = system?.features || [];
   const clearVideoSource = useCallback(() => setVideoSource(null), []);
 
@@ -97,7 +113,7 @@ export function App() {
         )}
         {page === "library" && <LibraryPage onOpenModule={setPage} />}
         {page === "settings" && (
-          <SettingsPage system={system} theme={theme} onThemeChange={setTheme} onRefresh={refreshSystem} focus={settingsFocus} />
+          <SettingsPage system={system} theme={theme} onThemeChange={setTheme} language={language} serviceLanguage={serviceLanguage} onLanguageChange={setLanguage} onRefresh={refreshSystem} focus={settingsFocus} />
         )}
       </div>
     </div>

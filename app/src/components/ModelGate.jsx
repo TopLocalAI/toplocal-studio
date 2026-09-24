@@ -2,6 +2,7 @@ import { useState } from "react";
 import { CloudArrowDown, Key, X } from "@phosphor-icons/react";
 import { openExternal } from "../api";
 import { formatBytes, isDownloading, useModels } from "../hooks/useModels";
+import { t } from "../i18n";
 
 // Shown in place of a module's controls when the models a feature needs are missing.
 // Downloads them in one click; models with restrictive licenses ask for consent first.
@@ -44,8 +45,8 @@ export function ModelGate({ features, featureIds, onInstalled }) {
       <div className="model-gate-head">
         <CloudArrowDown size={22} />
         <div>
-          <strong>{active.length ? "正在下载模型" : "首次使用需要下载模型"}</strong>
-          <small>{needed.map((m) => m.name).join("、")} · 共 {formatBytes(total)}</small>
+          <strong>{active.length ? t("正在下载模型") : t("首次使用需要下载模型")}</strong>
+          <small>{t("{names} · 共 {size}", { names: needed.map((m) => m.name).join(t("、")), size: formatBytes(total) })}</small>
         </div>
       </div>
       {active.length ? (
@@ -57,26 +58,28 @@ export function ModelGate({ features, featureIds, onInstalled }) {
             <small>
               {formatBytes(done)} / {formatBytes(total)}
               {active[0].download?.speed ? ` · ${formatBytes(active[0].download.speed)}/s` : ""}
-              {active[0].download?.state === "verifying" ? " · 正在校验" : ""}
+              {active[0].download?.state === "verifying" ? ` · ${t("正在校验")}` : ""}
             </small>
             <button type="button" className="link-button" onClick={() => active.forEach((m) => cancel(m.id))}>
-              暂停
+              {t("暂停")}
             </button>
           </div>
         </>
       ) : gated.length ? (
         <div className="model-gate-token">
           <p>
-            <Key size={14} /> {gated.map((m) => m.name).join("、")} 需要 Hugging Face 令牌：先在模型页面同意许可证，
-            再到“设置 → 模型下载”填写令牌。
+            <Key size={14} />{" "}
+            {t("{names} 需要 Hugging Face 令牌：先在模型页面同意许可证，再到“设置 → 模型下载”填写令牌。", {
+              names: gated.map((m) => m.name).join(t("、")),
+            })}
           </p>
           <button type="button" className="link-button" onClick={() => openExternal(gated[0].licensePage)}>
-            打开模型页面
+            {t("打开模型页面")}
           </button>
         </div>
       ) : (
         <button type="button" className="button button-primary model-gate-button" onClick={start}>
-          {needed.some((m) => m.download?.doneBytes) ? "继续下载" : "下载模型"}
+          {needed.some((m) => m.download?.doneBytes) ? t("继续下载") : t("下载模型")}
         </button>
       )}
       {failed ? <p className="form-error">{failed.download.error}</p> : null}
@@ -85,17 +88,17 @@ export function ModelGate({ features, featureIds, onInstalled }) {
       {consent ? (
         <div className="dialog-backdrop" role="presentation" onMouseDown={() => setConsent(null)}>
           <section className="export-dialog license-dialog" role="dialog" aria-modal="true" onMouseDown={(e) => e.stopPropagation()}>
-            <button type="button" className="dialog-close" aria-label="关闭" onClick={() => setConsent(null)}>
+            <button type="button" className="dialog-close" aria-label={t("关闭")} onClick={() => setConsent(null)}>
               <X size={19} />
             </button>
-            <h2>下载前请阅读许可证</h2>
+            <h2>{t("下载前请阅读许可证")}</h2>
             {consent.map((m) => (
               <div key={m.id} className="license-item">
                 <strong>{m.name}</strong>
                 <p>{m.licenseNote}</p>
                 {m.licenseUrl ? (
                   <button type="button" className="link-button" onClick={() => openExternal(m.licenseUrl)}>
-                    查看许可证全文
+                    {t("查看许可证全文")}
                   </button>
                 ) : null}
               </div>
@@ -113,7 +116,7 @@ export function ModelGate({ features, featureIds, onInstalled }) {
                 }
               }}
             >
-              我已阅读并同意，开始下载
+              {t("我已阅读并同意，开始下载")}
             </button>
           </section>
         </div>

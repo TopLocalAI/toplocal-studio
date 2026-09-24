@@ -6,6 +6,7 @@ Sizes and memory floors come from the measurements in results/*-benchmark.md.
 list is used, so a better build can replace a fallback without code changes.
 """
 from . import config
+from .i18n import tr
 from .system import tier as memory_tier
 
 GB = 1024**3
@@ -175,9 +176,18 @@ def installed(model_id: str) -> bool:
     return all((config.MODELS_DIR / rel).exists() for rel in _files(model))
 
 
+# Display fields translated at output time (the UI language can change while running).
+_DISPLAY = ("name", "license", "licenseNote")
+
+
+def _localized(item: dict) -> dict:
+    return {k: tr(v) if k in _DISPLAY and isinstance(v, str) else v for k, v in item.items()}
+
+
 def models_status() -> list[dict]:
     return [
-        {k: v for k, v in m.items() if k not in ("files", "choices", "sources", "parts")} | {"installed": installed(m["id"])}
+        _localized({k: v for k, v in m.items() if k not in ("files", "choices", "sources", "parts")})
+        | {"installed": installed(m["id"])}
         for m in MODELS
     ]
 
@@ -188,5 +198,5 @@ def features_status(mem_gb: float) -> list[dict]:
     for f in FEATURES:
         supported = machine >= _TIER_ORDER[f["minTier"]]
         ready = supported and all(installed(m) for m in f["models"])
-        out.append(f | {"supported": supported, "ready": ready})
+        out.append(_localized(f) | {"supported": supported, "ready": ready})
     return out

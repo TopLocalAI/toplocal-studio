@@ -1,3 +1,5 @@
+import { t } from "./i18n";
+
 // The desktop shell injects window.__LOCALAI__ = { baseUrl, token }. In development the
 // Vite proxy serves /api and /files on the same origin and adds the token itself.
 const runtime = window.__LOCALAI__ || {};
@@ -14,7 +16,7 @@ async function request(path, options = {}) {
     },
   });
   const body = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(body.error || `本地服务返回 ${response.status}`);
+  if (!response.ok) throw new Error(body.error || t("本地服务返回 {status}", { status: response.status }));
   return body;
 }
 
@@ -47,7 +49,7 @@ export const IN_DESKTOP = Boolean(runtime.baseUrl);
 export async function saveResult(id, file, title) {
   if (IN_DESKTOP) {
     const { name } = await api.save(id, file, title);
-    return `已保存到“下载”文件夹：${name}`;
+    return t("已保存到“下载”文件夹：{name}", { name });
   }
   const a = document.createElement("a");
   a.href = fileUrl(id, file, { download: true });
@@ -67,7 +69,7 @@ export async function uploadFile(file) {
     body: form,
   });
   const body = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(body.error || `上传失败（${response.status}）`);
+  if (!response.ok) throw new Error(body.error || t("上传失败（{status}）", { status: response.status }));
   return body;
 }
 

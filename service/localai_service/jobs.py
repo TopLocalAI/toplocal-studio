@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Awaitable, Callable
 
 from . import config, procs
+from .i18n import tr
 
 ACTIVE = ("queued", "running")
 # Engines must never fetch weights on their own (the model manager owns downloads), and
@@ -43,7 +44,7 @@ class Job:
     id: str = field(default_factory=lambda: uuid.uuid4().hex[:12])
     status: str = "queued"
     progress: float = 0.0
-    label: str = "排队中"
+    label: str = field(default_factory=lambda: tr("排队中"))
     created: float = field(default_factory=time.time)
     started: float | None = None
     finished: float | None = None
@@ -167,7 +168,7 @@ class JobManager:
         if job and job.status in ACTIVE:
             job.cancel()
             if job.status == "queued":
-                self._finish(job, "cancelled", label="已取消")
+                self._finish(job, "cancelled", label=tr("已取消"))
         return job
 
     def _finish(self, job: Job, status: str, *, label: str, error: str | None = None) -> None:
@@ -181,18 +182,18 @@ class JobManager:
             job = await self.queue.get()
             if job.status != "queued":
                 continue
-            job.status, job.started, job.label = "running", time.time(), "正在准备"
+            job.status, job.started, job.label = "running", time.time(), tr("正在准备")
             job.save()
             try:
                 job.result = await self.runners[(job.module, job.task)](job)
-                self._finish(job, "done", label="完成")
+                self._finish(job, "done", label=tr("完成"))
             except JobCancelled:
-                self._finish(job, "cancelled", label="已取消")
+                self._finish(job, "cancelled", label=tr("已取消"))
             except JobFailed as exc:
-                self._finish(job, "error", label="生成失败", error=str(exc))
+                self._finish(job, "error", label=tr("生成失败"), error=str(exc))
             except Exception as exc:  # engine crash: keep details in the log, show a short message
                 (job.dir / "error.log").write_text(repr(exc), encoding="utf-8")
-                self._finish(job, "error", label="生成失败", error=f"本地引擎出错：{exc}"[:300])
+                self._finish(job, "error", label=tr("生成失败"), error=tr("本地引擎出错：{error}", error=exc)[:300])
 
 
 def library(module: str | None = None) -> list[dict]:

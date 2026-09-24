@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { MusicNotes, Pause, Play, SkipBack, SkipForward, SpeakerHigh } from "@phosphor-icons/react";
 import { formatDuration } from "../api";
+import { t } from "../i18n";
 
 const SECTION_NAMES = {
   verse: "主歌", chorus: "副歌", "pre-chorus": "导歌", bridge: "桥段",
@@ -15,7 +16,7 @@ function Lyrics({ text }) {
         const tag = line.trim().match(/^\[([^\]]+)\]$/);
         if (tag) {
           const key = tag[1].toLowerCase().replace(/\s+\d+$/, "");
-          return <span key={i} className="lyric-tag">{SECTION_NAMES[key] || tag[1]}</span>;
+          return <span key={i} className="lyric-tag">{SECTION_NAMES[key] ? t(SECTION_NAMES[key]) : tag[1]}</span>;
         }
         return line.trim() ? <p key={i}>{line}</p> : <br key={i} />;
       })}
@@ -44,7 +45,7 @@ function Waveform({ seed, currentTime, duration, onSeek }) {
       className="quiet-wave"
       role="slider"
       tabIndex={0}
-      aria-label="播放进度"
+      aria-label={t("播放进度")}
       aria-valuemin={0}
       aria-valuemax={Math.round(duration)}
       aria-valuenow={Math.round(currentTime)}
@@ -80,24 +81,24 @@ export function MusicPlayer({ song, player, overlay }) {
   }, [player]);
 
   return (
-    <section className="quiet-player" aria-label="播放器">
+    <section className="quiet-player" aria-label={t("播放器")}>
       {song ? (
         <>
           <header>
-            <h2>{song.title || "未命名"}</h2>
+            <h2>{song.title || t("未命名")}</h2>
             <p>
-              {formatDuration(duration)} · {song.result?.engine === "chinese" ? "中文精唱" : "标准"} · 本机生成
+              {formatDuration(duration)} · {song.result?.engine === "chinese" ? t("中文精唱") : t("标准")} · {t("本机生成")}
             </p>
           </header>
           <Waveform seed={song.id} currentTime={player.currentTime} duration={duration} onSeek={player.seek} />
           <div className="quiet-controls">
-            <button type="button" className="quiet-play" aria-label={player.isPlaying ? "暂停" : "播放"} onClick={player.toggle}>
+            <button type="button" className="quiet-play" aria-label={player.isPlaying ? t("暂停") : t("播放")} onClick={player.toggle}>
               {player.isPlaying ? <Pause size={20} weight="fill" /> : <Play size={20} weight="fill" />}
             </button>
-            <button type="button" className="icon-button" aria-label="后退 10 秒" onClick={() => player.skip(-10)}>
+            <button type="button" className="icon-button" aria-label={t("后退 10 秒")} onClick={() => player.skip(-10)}>
               <SkipBack size={16} weight="fill" />
             </button>
-            <button type="button" className="icon-button" aria-label="前进 10 秒" onClick={() => player.skip(10)}>
+            <button type="button" className="icon-button" aria-label={t("前进 10 秒")} onClick={() => player.skip(10)}>
               <SkipForward size={16} weight="fill" />
             </button>
             <span className="quiet-time">
@@ -111,7 +112,7 @@ export function MusicPlayer({ song, player, overlay }) {
               max="1"
               step="0.01"
               value={player.volume}
-              aria-label="音量"
+              aria-label={t("音量")}
               onChange={(e) => player.setVolume(Number(e.target.value))}
             />
           </div>
@@ -120,7 +121,7 @@ export function MusicPlayer({ song, player, overlay }) {
       ) : (
         <div className="result-empty">
           <MusicNotes size={40} />
-          <p>写好描述，点“生成歌曲”</p>
+          <p>{t("写好描述，点“生成歌曲”")}</p>
         </div>
       )}
       {overlay}

@@ -6,6 +6,7 @@ import re
 import time
 
 from .. import catalog, config
+from ..i18n import tr
 from ..jobs import Job, JobFailed
 from . import llm, media
 
@@ -47,14 +48,14 @@ def _title(lyrics: str, description: str) -> str:
         line = line.strip()
         if line and not line.startswith("["):
             return line[:14]
-    return (description or "本地新作")[:14]
+    return (description or tr("本地新作"))[:14]
 
 
 async def _tick(job: Job, expected: float, start: float, stop: asyncio.Event, lo: float, hi: float, labels):
     while not stop.is_set():
         frac = min(1.0, (time.time() - start) / expected)
         label = labels[min(len(labels) - 1, int(frac * len(labels)))]
-        job.update(lo + (hi - lo) * frac * 0.97, label)
+        job.update(lo + (hi - lo) * frac * 0.97, tr(label))
         try:
             await asyncio.wait_for(stop.wait(), timeout=1.0)
         except asyncio.TimeoutError:
@@ -70,7 +71,7 @@ async def generate(job: Job) -> dict:
     duration = max(30, min(300, int(p.get("duration", 120))))
     seed = int(p.get("seed") or random.randint(1, 2**31 - 1))
     if not text:
-        raise JobFailed("请先输入歌曲描述或歌词")
+        raise JobFailed(tr("请先输入歌曲描述或歌词"))
 
     instrumental = mode == "instrumental"
     description = "" if mode == "lyrics" else text
@@ -79,9 +80,9 @@ async def generate(job: Job) -> dict:
     elif instrumental:
         lyrics = "[instrumental]"
     else:
-        job.update(3, "正在写歌词")
+        job.update(3, tr("正在写歌词"))
         lyrics = await llm.write_lyrics(job, text, styles, seed)
-    job.title = "纯音乐 · " + text[:10] if instrumental else _title(lyrics, description)
+    job.title = tr("纯音乐 · {text}", text=text[:10]) if instrumental else _title(lyrics, description)
     job.params = {**p, "seed": seed, "lyrics": lyrics}
     job.save()
 
@@ -96,7 +97,7 @@ async def generate(job: Job) -> dict:
     else:
         model = catalog.model_path("music.ace")
         if model is None:
-            raise JobFailed("音乐模型未安装，请在设置里下载")
+            raise JobFailed(tr("音乐模型未安装，请在设置里下载"))
         cmd = [config.AUDIOCPP_CLI, "--task", "gen", "--backend", config.AUDIOCPP_BACKEND, "--family", "ace_step",
                "--model", model, "--task-route", "text2music", "--text", _caption(styles, description, instrumental),
                "--duration-seconds", duration, "--seed", seed, "--out", wav]
@@ -113,9 +114,9 @@ async def generate(job: Job) -> dict:
         stop.set()
         await ticker
     if not wav.exists():
-        raise JobFailed("生成完成，但没有找到音频文件")
+        raise JobFailed(tr("生成完成，但没有找到音频文件"))
 
-    job.update(95, "正在完成音频文件")
+    job.update(95, tr("正在完成音频文件"))
     m4a = job.dir / "audio.m4a"
     await media.finish_audio(job, wav, m4a)
     return {"audio": "audio.m4a", "wav": "audio.wav", "duration": await media.probe_duration(m4a),
@@ -127,12 +128,12 @@ async def export_video(job: Job) -> dict:
     source_dir = config.LIBRARY_DIR / source_id
     audio = source_dir / "audio.m4a"
     if not source_id or not audio.exists():
-        raise JobFailed("请先生成一首可用的歌曲")
+        raise JobFailed(tr("请先生成一首可用的歌曲"))
     try:
-        title = json.loads((source_dir / "job.json").read_text(encoding="utf-8")).get("title") or "歌曲"
+        title = json.loads((source_dir / "job.json").read_text(encoding="utf-8")).get("title") or tr("歌曲")
     except (OSError, ValueError):
-        title = "歌曲"
-    job.title = f"{title} · 动效视频"
+        title = tr("歌曲")
+    job.title = tr("{title} · 动效视频", title=title)
     out = job.dir / "video.mp4"
     await media.export_visual_video(job, audio, str(job.params.get("visual", "flow")), out)
     return {"video": "video.mp4", "duration": await media.probe_duration(out)}

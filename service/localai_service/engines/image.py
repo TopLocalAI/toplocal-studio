@@ -12,6 +12,7 @@ import time
 from PIL import Image
 
 from .. import catalog, config, system, uploads
+from ..i18n import tr
 from ..jobs import Job, JobFailed
 from . import sdcpp
 
@@ -57,14 +58,14 @@ async def _run_mflux(job: Job, cmd: list, steps: int, expected: float) -> None:
     def on_line(line: str) -> None:
         m = re.search(r"(\d+)/(\d+) \[", line)  # tqdm step counter
         if m and int(m.group(2)) == steps:
-            job.update(15 + 80 * int(m.group(1)) / steps, "正在绘制")
+            job.update(15 + 80 * int(m.group(1)) / steps, tr("正在绘制"))
 
     async def tick():
         while True:
             await asyncio.sleep(1)
             frac = min(0.95, (time.time() - start) / expected)
             if job.progress < 15:
-                job.update(3 + 12 * frac / 0.3 if frac < 0.3 else 14, "正在加载模型")
+                job.update(3 + 12 * frac / 0.3 if frac < 0.3 else 14, tr("正在加载模型"))
 
     ticker = asyncio.create_task(tick())
     try:
@@ -77,14 +78,14 @@ async def generate(job: Job) -> dict:
     p = job.params
     text = str(p.get("text", "")).strip()
     if not text:
-        raise JobFailed("请先描述你想要的画面")
+        raise JobFailed(tr("请先描述你想要的画面"))
     styles = [str(s) for s in p.get("styles", [])][:3]
     width, height = ASPECTS.get(p.get("aspect"), ASPECTS["1:1"])
     seed = int(p.get("seed") or random.randint(1, 2**31 - 1))
     fast = p.get("quality") == "fast"
     model_id = "image.klein4b" if fast else "image.zimage"
     if not catalog.installed(model_id):
-        raise JobFailed("图片模型未安装，请在设置里下载")
+        raise JobFailed(tr("图片模型未安装，请在设置里下载"))
     job.title = text[:16]
     job.params = {**p, "seed": seed}
     out = job.dir / "image.png"
@@ -96,7 +97,7 @@ async def generate(job: Job) -> dict:
                               "-p", _prompt(text, styles), "-W", width, "-H", height, "-s", seed, "-o", out],
                         steps=steps, expected=20 if fast else 40)
         if not out.exists():
-            raise JobFailed("生成完成，但没有找到图片")
+            raise JobFailed(tr("生成完成，但没有找到图片"))
         return {"image": "image.png", "width": width, "height": height, "model": model_id}
     model_dir = catalog.model_path(model_id).parent
     if fast:
@@ -110,7 +111,7 @@ async def generate(job: Job) -> dict:
             "--low-ram", "--output", out]
     await _run_mflux(job, cmd, steps, expected)
     if not out.exists():
-        raise JobFailed("生成完成，但没有找到图片")
+        raise JobFailed(tr("生成完成，但没有找到图片"))
     return {"image": "image.png", "width": width, "height": height, "model": model_id}
 
 
@@ -118,15 +119,15 @@ async def edit(job: Job) -> dict:
     p = job.params
     text = str(p.get("text", "")).strip()
     if not text:
-        raise JobFailed("请描述想怎么修改这张图")
+        raise JobFailed(tr("请描述想怎么修改这张图"))
     source = uploads.resolve(p.get("source"))
     # klein 9B edits best but needs the 24–32 GB class; 16 GB machines use klein 4B.
     big = system.tier(system.memory_gb()) != "16" and catalog.installed("image.klein9b")
     model_id = "image.klein9b" if big else "image.klein4b"
     if not catalog.installed(model_id):
-        raise JobFailed("图片编辑模型未安装，请在设置里下载")
+        raise JobFailed(tr("图片编辑模型未安装，请在设置里下载"))
     seed = int(p.get("seed") or random.randint(1, 2**31 - 1))
-    job.title = "编辑 · " + text[:12]
+    job.title = tr("编辑 · {text}", text=text[:12])
     job.params = {**p, "seed": seed}
     job.dir.mkdir(parents=True, exist_ok=True)
     src = job.dir / "source.png"
@@ -137,7 +138,7 @@ async def edit(job: Job) -> dict:
                               "--sampling-method", "euler", "-p", text, "-W", width, "-H", height, "-s", seed,
                               "-o", out], steps=4, expected=60 if big else 30)
         if not out.exists():
-            raise JobFailed("编辑完成，但没有找到图片")
+            raise JobFailed(tr("编辑完成，但没有找到图片"))
         return {"image": "image.png", "source": "source.png", "width": width, "height": height, "model": model_id}
     model_dir = catalog.model_path(model_id)
     cmd = [*config.engine_cmd("mflux-generate-flux2-edit"), "--image-paths", src, "--model", model_dir.parent,
@@ -145,5 +146,5 @@ async def edit(job: Job) -> dict:
            "--prompt", text, "--width", width, "--height", height, "--seed", seed, "--low-ram", "--output", out]
     await _run_mflux(job, cmd, 4, 40 if big else 22)
     if not out.exists():
-        raise JobFailed("编辑完成，但没有找到图片")
+        raise JobFailed(tr("编辑完成，但没有找到图片"))
     return {"image": "image.png", "source": "source.png", "width": width, "height": height, "model": model_id}

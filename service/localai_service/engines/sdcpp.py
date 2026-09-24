@@ -8,6 +8,7 @@ import re
 import time
 
 from .. import config
+from ..i18n import tr
 from ..jobs import Job
 
 STEP = re.compile(r"\|\s*(\d+)/(\d+)\s+-")
@@ -25,23 +26,26 @@ def env() -> dict:
 
 async def run(job: Job, args: list, *, steps: int, expected: float, span=(15, 92),
               label="正在绘制", decode_label="正在解码", log_name="sdcpp.log") -> None:
-    """Run sd-cli; progress moves through `span` while sampling, then to the decode stage."""
+    """Run sd-cli; progress moves through `span` while sampling, then to the decode stage.
+
+    `label` and `decode_label` are Chinese source texts, translated here with tr().
+    """
     lo, hi = span
     start = time.time()
 
     def on_line(line: str) -> None:
         m = STEP.search(line)
         if m and int(m.group(2)) == steps:
-            job.update(lo + (hi - lo) * int(m.group(1)) / steps, label)
+            job.update(lo + (hi - lo) * int(m.group(1)) / steps, tr(label))
         elif "sampling completed" in line:
-            job.update(hi, decode_label)
+            job.update(hi, tr(decode_label))
 
     async def tick():  # model loading prints nothing useful: creep forward by time
         while True:
             await asyncio.sleep(1)
             if job.progress < lo:
                 frac = min(0.95, (time.time() - start) / max(1.0, expected * 0.3))
-                job.update(3 + (lo - 4) * frac, "正在加载模型")
+                job.update(3 + (lo - 4) * frac, tr("正在加载模型"))
 
     ticker = asyncio.create_task(tick())
     try:

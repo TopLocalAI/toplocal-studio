@@ -4,6 +4,7 @@ import re
 from pathlib import Path
 
 from .. import config, procs
+from ..i18n import tr
 from ..jobs import Job
 
 VISUALS = {"flow": "visual-flow-city.png", "spectrum": "visual-spectrum.png", "nebula": "visual-nebula.png"}
@@ -41,7 +42,7 @@ async def export_visual_video(job: Job, audio: Path, visual: str, out: Path) -> 
     def on_line(line: str) -> None:
         m = re.match(r"out_time_us=(\d+)", line)
         if m:
-            job.update(int(m.group(1)) / 1e6 / duration * 98, "正在渲染声音动效画面")
+            job.update(int(m.group(1)) / 1e6 / duration * 98, tr("正在渲染声音动效画面"))
 
     await job.run([
         config.FFMPEG, "-y", "-loop", "1", "-framerate", "30", "-i", config.ASSETS_DIR / VISUALS[visual],

@@ -16,6 +16,7 @@ from pathlib import Path
 import cn2an
 
 from .. import catalog, config, uploads
+from ..i18n import tr
 from ..jobs import Job, JobFailed
 from . import media
 
@@ -89,24 +90,24 @@ async def transcribe(job: Job) -> dict:
     model_id, family = ASR_MODELS[tier]
     model = catalog.model_path(model_id)
     if model is None:
-        raise JobFailed("语音识别模型未安装，请在设置里下载")
-    job.title = Path(p.get("sourceName") or source.name).stem[:20] + " · 文字稿"
+        raise JobFailed(tr("语音识别模型未安装，请在设置里下载"))
+    job.title = tr("{name} · 文字稿", name=Path(p.get("sourceName") or source.name).stem[:20])
     job.save()
 
-    job.update(3, "正在读取音频")
+    job.update(3, tr("正在读取音频"))
     wav = job.dir / "input.wav"
     duration = await to_wav16k(job, source, wav)
     if duration < 0.3:
-        raise JobFailed("没有检测到有效的音频")
+        raise JobFailed(tr("没有检测到有效的音频"))
 
-    job.update(10, "正在切分语句")
+    job.update(10, tr("正在切分语句"))
     vad_json = job.dir / "vad.json"
     await job.run(_cli("--task", "vad", "--family", "silero_vad", "--model", VAD_MODEL, "--audio", wav,
                        "--vad-chunks-out", vad_json, "--vad-chunk-max-seconds", "12"),
                   cwd=config.AUDIOCPP_ROOT, log_name="vad.log")
     chunks = json.loads(vad_json.read_text(encoding="utf-8")) if vad_json.exists() else []
     if not chunks:
-        raise JobFailed("没有检测到说话的声音")
+        raise JobFailed(tr("没有检测到说话的声音"))
 
     chunk_dir = job.dir / "chunks"
     chunk_dir.mkdir(exist_ok=True)
@@ -127,9 +128,9 @@ async def transcribe(job: Job) -> dict:
             current["id"] = line.split("=", 1)[1]
         elif line.startswith("text_output=") and current["id"]:
             texts[current["id"]] = texts.get(current["id"], "") + line.split("=", 1)[1]
-            job.update(15 + 80 * len(texts) / len(chunks), "正在识别文字")
+            job.update(15 + 80 * len(texts) / len(chunks), tr("正在识别文字"))
 
-    job.update(15, "正在识别文字")
+    job.update(15, tr("正在识别文字"))
     args = ["--task", "asr", "--family", family, "--model", model, "--batch-audio-dir", chunk_dir]
     if family == "qwen3_asr":
         args += ["--text", ""]
@@ -151,7 +152,7 @@ async def transcribe(job: Job) -> dict:
             n += 1
             srt.append(f"{n}\n{_fmt_srt(start)} --> {_fmt_srt(end)}\n{line}\n")
     if not plain:
-        raise JobFailed("没有识别出文字")
+        raise JobFailed(tr("没有识别出文字"))
     joiner = "" if limit == 24 else " "
     (job.dir / "transcript.txt").write_text(joiner.join(plain) + "\n", encoding="utf-8")
     (job.dir / "subtitles.srt").write_text("\n".join(srt), encoding="utf-8")
@@ -172,7 +173,7 @@ def _kokoro_text(text: str) -> str:
 async def _kokoro(job: Job, text: str, voice: str, out: Path, log: str = "tts.log") -> None:
     model = catalog.model_path("speech.tts-fast")
     if model is None:
-        raise JobFailed("快速配音模型未安装，请在设置里下载")
+        raise JobFailed(tr("快速配音模型未安装，请在设置里下载"))
     await job.run(_cli("--task", "tts", "--family", "kokoro_tts", "--model", model, "--language", "zh",
                        "--voice-id", voice, "--text", _kokoro_text(text), "--out", out),
                   cwd=config.AUDIOCPP_ROOT, log_name=log)
@@ -191,46 +192,46 @@ async def synthesize(job: Job) -> dict:
     p = job.params
     text = str(p.get("text", "")).strip()
     if not text:
-        raise JobFailed("请输入要朗读的文字")
+        raise JobFailed(tr("请输入要朗读的文字"))
     if len(text) > 5000:
-        raise JobFailed("一次最多朗读 5000 字，请分段生成")
+        raise JobFailed(tr("一次最多朗读 5000 字，请分段生成"))
     voice = p.get("voice") or {}
-    job.title = "配音 · " + text[:14]
+    job.title = tr("配音 · {text}", text=text[:14])
     job.save()
     wav = job.dir / "speech.wav"
     has_latin = bool(re.search(r"[A-Za-z]{2,}", text))
 
     if voice.get("preset") in KOKORO_VOICES and not has_latin:
-        job.update(20, "正在朗读")
+        job.update(20, tr("正在朗读"))
         await _kokoro(job, text, voice["preset"], wav)
         engine = "kokoro"
     else:
         model = catalog.model_path("speech.tts")
         if model is None:
-            raise JobFailed("配音模型未安装，请在设置里下载")
+            raise JobFailed(tr("配音模型未安装，请在设置里下载"))
         if voice.get("preset") in KOKORO_VOICES:
-            job.update(8, "正在准备音色")
+            job.update(8, tr("正在准备音色"))
             ref, ref_text = await _preset_reference(job, voice["preset"])
         else:
             ref = job.dir / "voice-ref.wav"
-            job.update(5, "正在分析参考声音")
+            job.update(5, tr("正在分析参考声音"))
             dur = await to_wav16k(job, uploads.resolve(voice.get("clone")), ref)
             if dur < 3:
-                raise JobFailed("参考录音太短，请提供 5 到 20 秒的清晰人声")
+                raise JobFailed(tr("参考录音太短，请提供 5 到 20 秒的清晰人声"))
             if dur > 30:
                 await job.run([config.FFMPEG, "-y", "-v", "error", "-i", ref, "-t", "20", str(ref) + ".cut.wav"],
                               log_name="ffmpeg.log")
                 Path(str(ref) + ".cut.wav").replace(ref)
             ref_text = await _reference_text(job, ref)
-        job.update(20, "正在朗读")
+        job.update(20, tr("正在朗读"))
         await job.run(_cli("--task", "tts", "--family", "qwen3_tts", "--model", model, "--voice-ref", ref,
                            "--reference-text", ref_text, "--text", text, "--out", wav),
                       cwd=config.AUDIOCPP_ROOT, log_name="tts.log")
         engine = "qwen3_tts"
 
     if not wav.exists():
-        raise JobFailed("生成完成，但没有找到音频")
-    job.update(95, "正在完成音频文件")
+        raise JobFailed(tr("生成完成，但没有找到音频"))
+    job.update(95, tr("正在完成音频文件"))
     m4a = job.dir / "speech.m4a"
     await media.finish_audio(job, wav, m4a)
     return {"audio": "speech.m4a", "wav": "speech.wav", "duration": await media.probe_duration(m4a),

@@ -1,45 +1,30 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
-  <!-- TopLocal Studio: four creative modules (image, video, speech, music) on one local
-       workbench. macOS grid: 824 px body with a 100 px margin. -->
+  <!-- TopLocal Studio: a spark of inspiration, created on your own computer.
+       macOS grid: 824 px body with a 100 px margin. -->
   <defs>
-    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#2E3236"/>
-      <stop offset="1" stop-color="#1B1E21"/>
+    <linearGradient id="body" x1="0.15" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#FFA15C"/>
+      <stop offset="0.55" stop-color="#F9704F"/>
+      <stop offset="1" stop-color="#E9455E"/>
     </linearGradient>
-    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#FF8A55"/>
-      <stop offset="1" stop-color="#F2612E"/>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.22"/>
+      <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0"/>
     </linearGradient>
     <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%">
-      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000" flood-opacity="0.28"/>
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#6B1A1A" flood-opacity="0.30"/>
+    </filter>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="6" stdDeviation="12" flood-color="#9C2436" flood-opacity="0.35"/>
     </filter>
   </defs>
   <rect x="100" y="100" width="824" height="824" rx="186" fill="url(#body)" filter="url(#shadow)"/>
-  <rect x="101" y="101" width="822" height="822" rx="185" fill="none" stroke="#FFFFFF" stroke-opacity="0.09" stroke-width="2"/>
-
-  <!-- image: sun over hills -->
-  <rect x="250" y="250" width="240" height="240" rx="58" fill="#F4F1EA"/>
-  <circle cx="420" cy="322" r="26" fill="#2B2F33"/>
-  <path d="M292 438 L352 360 Q360 350 368 360 L404 406 L424 384 Q432 375 440 384 L452 398 L452 438 Z" fill="#2B2F33"/>
-
-  <!-- video: play -->
-  <rect x="534" y="250" width="240" height="240" rx="58" fill="#F4F1EA"/>
-  <path d="M624 318 Q624 302 638 310 L712 356 Q726 370 712 384 L638 430 Q624 438 624 422 Z" fill="#2B2F33"/>
-
-  <!-- speech: waveform -->
-  <rect x="250" y="534" width="240" height="240" rx="58" fill="#F4F1EA"/>
-  <g fill="#2B2F33">
-    <rect x="300" y="626" width="24" height="56" rx="12"/>
-    <rect x="344" y="596" width="24" height="116" rx="12"/>
-    <rect x="388" y="614" width="24" height="80" rx="12"/>
-    <rect x="432" y="638" width="24" height="32" rx="12"/>
-  </g>
-
-  <!-- music: note, on the accent tile -->
-  <rect x="534" y="534" width="240" height="240" rx="58" fill="url(#accent)"/>
-  <g fill="#FFFFFF">
-    <rect x="668" y="590" width="22" height="116" rx="11"/>
-    <path d="M668 590 Q668 578 680 580 L718 588 Q730 591 730 603 L730 618 Q730 630 718 627 L668 616 Z"/>
-    <ellipse cx="652" cy="706" rx="38" ry="30"/>
+  <rect x="100" y="100" width="824" height="824" rx="186" fill="url(#gloss)"/>
+  <rect x="101" y="101" width="822" height="822" rx="185" fill="none" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="2"/>
+  <g filter="url(#glow)" fill="#FFFFFF">
+    <!-- main spark -->
+    <path d="M470 232 C492 408 532 450 712 474 C532 498 492 540 470 716 C448 540 408 498 228 474 C408 450 448 408 470 232 Z"/>
+    <!-- companion spark -->
+    <path d="M690 604 C699 666 714 681 776 690 C714 699 699 714 690 776 C681 714 666 699 604 690 C666 681 681 666 690 604 Z" fill-opacity="0.9"/>
   </g>
 </svg>

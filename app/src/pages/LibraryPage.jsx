@@ -3,6 +3,7 @@ import { DownloadSimple, FileText, FilmStrip, MusicNotes, Trash, Waveform } from
 import { api, fileUrl, formatDuration, saveResult } from "../api";
 import { Toast, useToast } from "../components/Toast";
 import { MODULES } from "../data";
+import { getLanguage, t } from "../i18n";
 
 const FILTERS = [{ id: "", label: "全部" }, ...MODULES.map((m) => ({ id: m.id, label: m.label }))];
 
@@ -49,7 +50,7 @@ export function LibraryPage() {
   return (
     <section className="library-page">
       <header className="page-header">
-        <h1>我的作品</h1>
+        <h1>{t("我的作品")}</h1>
         <div className="filter-tabs" role="tablist">
           {FILTERS.map((f) => (
             <button
@@ -60,13 +61,13 @@ export function LibraryPage() {
               className={filter === f.id ? "is-active" : ""}
               onClick={() => setFilter(f.id)}
             >
-              {f.label}
+              {t(f.label)}
             </button>
           ))}
         </div>
       </header>
       {error ? <p className="form-error">{error}</p> : null}
-      {items.length === 0 && !error ? <p className="empty-note">还没有作品，去生成一个吧。</p> : null}
+      {items.length === 0 && !error ? <p className="empty-note">{t("还没有作品，去生成一个吧。")}</p> : null}
       <div className="library-grid">
         {items.map((item) => {
           const file = mainFile(item);
@@ -88,9 +89,9 @@ export function LibraryPage() {
                 {isVideo ? <FilmStrip size={18} className="library-badge" /> : null}
               </div>
               <div className="library-meta">
-                <strong title={item.title}>{item.title || "未命名"}</strong>
+                <strong title={item.title}>{item.title || t("未命名")}</strong>
                 <span>
-                  {new Date(item.created * 1000).toLocaleString("zh-CN", { dateStyle: "short", timeStyle: "short" })}
+                  {new Date(item.created * 1000).toLocaleString(getLanguage() === "en" ? "en-US" : "zh-CN", { dateStyle: "short", timeStyle: "short" })}
                   {item.result?.duration ? ` · ${formatDuration(item.result.duration)}` : ""}
                 </span>
               </div>
@@ -100,7 +101,7 @@ export function LibraryPage() {
                   <button
                     type="button"
                     className="icon-button"
-                    title="下载"
+                    title={t("下载")}
                     onClick={() => saveResult(item.id, file, item.title).then(toast.show, (e) => setError(e.message))}
                   >
                     <DownloadSimple size={18} />
@@ -110,14 +111,14 @@ export function LibraryPage() {
                   <>
                     <button type="button" className="icon-button is-danger" onClick={() => remove(item)}>
                       <Trash size={16} />
-                      <span>确认删除</span>
+                      <span>{t("确认删除")}</span>
                     </button>
-                    <button type="button" className="icon-button" onClick={() => setConfirming(null)} title="取消">
-                      取消
+                    <button type="button" className="icon-button" onClick={() => setConfirming(null)} title={t("取消")}>
+                      {t("取消")}
                     </button>
                   </>
                 ) : (
-                  <button type="button" className="icon-button" onClick={() => remove(item)} title="删除">
+                  <button type="button" className="icon-button" onClick={() => remove(item)} title={t("删除")}>
                     <Trash size={18} />
                   </button>
                 )}

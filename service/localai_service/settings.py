@@ -3,7 +3,8 @@ import json
 
 from . import config
 
-DEFAULTS = {"mirror": "huggingface", "hfToken": ""}
+DEFAULTS = {"mirror": "huggingface", "hfToken": "", "language": "zh"}
+LANGUAGES = ("zh", "en")
 _PATH = config.DATA_DIR / "settings.json"
 
 
@@ -22,6 +23,8 @@ def update(values: dict) -> dict:
     data = load()
     if values.get("mirror") in ("huggingface", "hf-mirror"):
         data["mirror"] = values["mirror"]
+    if values.get("language") in LANGUAGES:
+        data["language"] = values["language"]
     if "hfToken" in values:
         data["hfToken"] = str(values["hfToken"]).strip()[:200]
     _PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -35,4 +38,4 @@ def update(values: dict) -> dict:
 
 def public() -> dict:
     data = load()
-    return {"mirror": data["mirror"], "hasHfToken": bool(data["hfToken"])}
+    return {"mirror": data["mirror"], "hasHfToken": bool(data["hfToken"]), "language": data["language"]}

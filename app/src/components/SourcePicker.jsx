@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { ImageSquare, UploadSimple, X } from "@phosphor-icons/react";
 import { api, fileUrl, uploadFile, uploadUrl } from "../api";
+import { t } from "../i18n";
 
 // Pick an input file: drag-and-drop / browse to upload, or reuse an earlier result.
 // `value` is a job-param reference: {upload, preview} or {library, file, preview}.
-export function SourcePicker({ kind = "image", value, onChange, label = "选择图片" }) {
+export function SourcePicker({ kind = "image", value, onChange, label }) {
   const input = useRef(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -39,11 +40,11 @@ export function SourcePicker({ kind = "image", value, onChange, label = "选择�
     return (
       <div className="source-chosen">
         {kind === "image" ? (
-          <img src={value.preview} alt="已选择的图片" />
+          <img src={value.preview} alt={t("已选择的图片")} />
         ) : (
           <span className="source-name">{value.name}</span>
         )}
-        <button type="button" className="icon-button" onClick={() => onChange(null)} title="移除">
+        <button type="button" className="icon-button" onClick={() => onChange(null)} title={t("移除")}>
           <X size={16} />
         </button>
       </div>
@@ -69,8 +70,8 @@ export function SourcePicker({ kind = "image", value, onChange, label = "选择�
         disabled={busy}
       >
         <UploadSimple size={22} />
-        <strong>{busy ? "正在上传…" : label}</strong>
-        <small>拖到这里，或点击选择文件</small>
+        <strong>{busy ? t("正在上传…") : label || t("选择图片")}</strong>
+        <small>{t("拖到这里，或点击选择文件")}</small>
       </button>
       <input
         ref={input}
@@ -85,7 +86,7 @@ export function SourcePicker({ kind = "image", value, onChange, label = "选择�
       {recent.length ? (
         <div className="source-recent">
           <span>
-            <ImageSquare size={14} /> 或从作品中选择
+            <ImageSquare size={14} /> {t("或从作品中选择")}
           </span>
           <div>
             {recent.map((item) => (
