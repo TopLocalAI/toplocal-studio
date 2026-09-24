@@ -6,18 +6,16 @@ import { t } from "../i18n";
 
 // Shown in place of a module's controls when the models a feature needs are missing.
 // Downloads them in one click; models with restrictive licenses ask for consent first.
-export function ModelGate({ features, featureIds, onInstalled }) {
+export function ModelGate({ features, featureIds, modelIds, onInstalled }) {
   const { models, hasHfToken, download, cancel } = useModels(onInstalled);
   const [consent, setConsent] = useState(null);
   const [error, setError] = useState("");
 
-  const needed = [
-    ...new Set(
-      features.filter((f) => featureIds.includes(f.id) && f.supported && !f.ready).flatMap((f) => f.models),
-    ),
-  ]
-    .map((id) => models.find((m) => m.id === id))
-    .filter((m) => m && !m.installed);
+  // Either the models a feature needs, or an explicit list (the model picked for a task).
+  const wanted = modelIds
+    ? modelIds.filter(Boolean)
+    : features.filter((f) => featureIds.includes(f.id) && f.supported && !f.ready).flatMap((f) => f.models);
+  const needed = [...new Set(wanted)].map((id) => models.find((m) => m.id === id)).filter((m) => m && !m.installed);
   if (!needed.length) return null;
 
   const total = needed.reduce((s, m) => s + m.sizeBytes, 0);

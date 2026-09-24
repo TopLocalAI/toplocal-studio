@@ -8,6 +8,7 @@ const ACTIVE = ["running", "verifying"];
 export function useModels(onInstalled) {
   const [models, setModels] = useState([]);
   const [hasHfToken, setHasHfToken] = useState(false);
+  const [tasks, setTasks] = useState({});
   const timer = useRef(null);
   const installedRef = useRef(onInstalled);
   installedRef.current = onInstalled;
@@ -15,8 +16,9 @@ export function useModels(onInstalled) {
 
   const refresh = useCallback(async () => {
     try {
-      const { models: list, hasHfToken: token } = await api.models();
+      const { models: list, hasHfToken: token, tasks: taskList } = await api.models();
       setModels(list);
+      setTasks(taskList || {});
       setHasHfToken(Boolean(token));
       let active = false;
       for (const m of list) {
@@ -35,7 +37,11 @@ export function useModels(onInstalled) {
 
   useEffect(() => {
     refresh();
-    return () => clearTimeout(timer.current);
+    window.addEventListener("toplocal:language", refresh);
+    return () => {
+      clearTimeout(timer.current);
+      window.removeEventListener("toplocal:language", refresh);
+    };
   }, [refresh]);
 
   const download = useCallback(
@@ -61,7 +67,7 @@ export function useModels(onInstalled) {
     [refresh],
   );
 
-  return { models, hasHfToken, refresh, download, cancel, remove };
+  return { models, tasks, hasHfToken, refresh, download, cancel, remove };
 }
 
 export function formatBytes(bytes) {

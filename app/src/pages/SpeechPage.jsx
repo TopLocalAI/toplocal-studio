@@ -1,18 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
 import { DownloadSimple, Microphone, Sparkle, Subtitles, TextAa, UserSound } from "@phosphor-icons/react";
-import { api, fileUrl, formatDuration, saveResult } from "../api";
+import { api, fileUrl, formatDuration, saveResult, uploadFile } from "../api";
 import { JobOverlay } from "../components/JobOverlay";
 import { SourcePicker } from "../components/SourcePicker";
 import { ModelGate } from "../components/ModelGate";
+import { ModelPicker } from "../components/ModelPicker";
+import { Welcome } from "../components/Welcome";
+import { ASR_EXAMPLES, TTS_EXAMPLES } from "../examples";
+import { useModels } from "../hooks/useModels";
+import { useTaskModel } from "../hooks/useTaskModel";
 import { Toast, useToast } from "../components/Toast";
 import { useJob } from "../hooks/useJob";
 import { t } from "../i18n";
 
-const QUALITIES = [
-  { id: "standard", name: "标准", note: "准确又快" },
-  { id: "accurate", name: "精准", note: "方言口音更稳" },
-  { id: "fast", name: "极速", note: "长录音首选" },
-];
 const LANGUAGES = [
   { id: "", name: "自动识别" },
   { id: "zh", name: "普通话" },
@@ -22,10 +22,9 @@ const LANGUAGES = [
   { id: "ko", name: "韩语" },
 ];
 
-export function SpeechPage({ features, serviceReady , onModelsChanged }) {
+export function SpeechPage({ active = true, features, serviceReady , onModelsChanged }) {
   const [mode, setMode] = useState("transcribe");
   const [source, setSource] = useState(null);
-  const [quality, setQuality] = useState("standard");
   const [language, setLanguage] = useState("");
   const [text, setText] = useState("");
   const [voices, setVoices] = useState([]);
@@ -36,22 +35,28 @@ export function SpeechPage({ features, serviceReady , onModelsChanged }) {
   const [error, setError] = useState("");
   const toast = useToast();
 
-  const ready = (id) => features.find((f) => f.id === id)?.ready;
+  const { models, tasks } = useModels(onModelsChanged);
+  const [asrModel, setAsrModel] = useTaskModel("speech.transcribe", tasks["speech.transcribe"]);
+  const [ttsModel, setTtsModel] = useTaskModel("speech.synthesize", tasks["speech.synthesize"]);
+  const qwenInstalled = Boolean(models.find((m) => m.id === "speech.tts")?.installed);
+  // Cloning always runs on Qwen3-TTS, whichever model is picked.
+  const ttsReady = Boolean(ttsModel?.installed) && (voice !== "clone" || qwenInstalled);
 
   const loadRecent = useCallback(async () => {
     try {
       const { items } = await api.library("speech");
       setRecent(items);
+      setCurrent((c) => (c && !items.some((i) => i.id === c.id) ? null : c)); // deleted in the library
     } catch {
       /* not ready */
     }
   }, []);
 
   useEffect(() => {
-    if (!serviceReady) return;
+    if (!serviceReady || !active) return;
     loadRecent();
     api.voices().then((r) => setVoices(r.voices)).catch(() => setVoices([]));
-  }, [serviceReady, loadRecent]);
+  }, [serviceReady, active, loadRecent]);
 
   const job = useJob((finished) => {
     if (finished.status === "done") {
@@ -64,10 +69,32 @@ export function SpeechPage({ features, serviceReady , onModelsChanged }) {
     setError("");
     try {
       if (mode === "transcribe") {
-        await job.submit("speech", "transcribe", { source, sourceName: source?.name, quality, language });
+        await job.submit("speech", "transcribe", { source, sourceName: source?.name, language, model: asrModel?.model });
       } else {
         const v = voice === "clone" ? { clone: cloneSource } : { preset: voice };
-        await job.submit("speech", "synthesize", { text, voice: v });
+        await job.submit("speech", "synthesize", { text, voice: v, model: ttsModel?.model });
+      }
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  const runExample = async (ex) => {
+    setError("");
+    try {
+      if (mode === "transcribe") {
+        // The sample recording ships with the app; upload it like a user file.
+        const blob = await (await fetch(ex.audio)).blob();
+        const name = ex.audio.split("/").pop();
+        const info = await uploadFile(new File([blob], name, { type: blob.type || "audio/mp4" }));
+        const picked = { upload: info.id, preview: "", name };
+        setSource(picked);
+        await job.submit("speech", "transcribe", { source: picked, sourceName: t(ex.title), language: "", model: asrModel?.model });
+      } else {
+        const prompt = t(ex.prompt);
+        setText(prompt);
+        setVoice(ex.voice);
+        await job.submit("speech", "synthesize", { text: prompt, voice: { preset: ex.voice }, model: ttsModel?.model });
       }
     } catch (e) {
       setError(e.message);
@@ -81,8 +108,8 @@ export function SpeechPage({ features, serviceReady , onModelsChanged }) {
     serviceReady &&
     !job.running &&
     (mode === "transcribe"
-      ? source && ready("speech.transcribe")
-      : text.trim() && ready("speech.synthesize") && (voice !== "clone" || cloneSource));
+      ? source && asrModel?.installed
+      : text.trim() && ttsReady && (voice !== "clone" || cloneSource));
 
   const shown = current && current.task === mode ? current : null;
 
@@ -110,17 +137,6 @@ export function SpeechPage({ features, serviceReady , onModelsChanged }) {
               <span className="field-label">{t("录音或视频")}</span>
               <SourcePicker kind="audio" value={source} onChange={setSource} label={t("上传录音或视频")} />
               <small className="field-hint">{t("支持 mp3、m4a、wav、mp4、mov 等，长度不限")}</small>
-            </div>
-            <div className="field-group">
-              <span className="field-label">{t("识别模式")}</span>
-              <div className="segmented segmented-3" role="radiogroup">
-                {QUALITIES.map((q) => (
-                  <button key={q.id} type="button" role="radio" aria-checked={quality === q.id} className={quality === q.id ? "is-active" : ""} onClick={() => setQuality(q.id)}>
-                    <strong>{t(q.name)}</strong>
-                    <small>{t(q.note)}</small>
-                  </button>
-                ))}
-              </div>
             </div>
             <div className="field-group duration-group">
               <label htmlFor="asr-lang" className="field-label">{t("语言")}</label>
@@ -166,6 +182,15 @@ export function SpeechPage({ features, serviceReady , onModelsChanged }) {
           </>
         )}
 
+        <div className="field-group">
+          <span className="field-label">{t("模型")}</span>
+          {mode === "transcribe" ? (
+            <ModelPicker options={tasks["speech.transcribe"]} value={asrModel} onChange={setAsrModel} models={models} />
+          ) : (
+            <ModelPicker options={tasks["speech.synthesize"]} value={ttsModel} onChange={setTtsModel} models={models} />
+          )}
+        </div>
+
         <button type="button" className="generate-button" disabled={!canRun} onClick={run}>
           <Sparkle size={21} weight="fill" />
           <span>{job.running ? t("处理中…") : mode === "transcribe" ? t("开始转文字") : t("生成配音")}</span>
@@ -174,7 +199,12 @@ export function SpeechPage({ features, serviceReady , onModelsChanged }) {
           {!serviceReady ? t("正在连接本地引擎") : mode === "transcribe" ? t("1 小时录音约 2–5 分钟，全部在本机完成") : t("几秒到几十秒，全部在本机完成")}
         </p>
         {error ? <p className="form-error" role="alert">{error}</p> : null}
-        {serviceReady ? <ModelGate features={features} featureIds={mode === "transcribe" ? ["speech.transcribe"] : ["speech.synthesize"]} onInstalled={onModelsChanged} /> : null}
+        {serviceReady ? (
+          <ModelGate
+            modelIds={mode === "transcribe" ? [asrModel?.model] : [ttsModel?.model, voice === "clone" ? "speech.tts" : null]}
+            onInstalled={onModelsChanged}
+          />
+        ) : null}
       </aside>
 
       <main className="studio-stage">
@@ -196,11 +226,24 @@ export function SpeechPage({ features, serviceReady , onModelsChanged }) {
               <audio controls src={fileUrl(shown.id, shown.result.audio)} />
               <p>{shown.result.text}</p>
             </article>
+          ) : mode === "transcribe" ? (
+            <Welcome
+              title="录音转文字"
+              subtitle="上传录音或视频，得到文字稿和字幕，长度不限，方言也能听懂。"
+              examples={ASR_EXAMPLES}
+              kind="text"
+              onPick={runExample}
+              disabled={!serviceReady || job.running || !asrModel?.installed}
+            />
           ) : (
-            <div className="result-empty">
-              {mode === "transcribe" ? <Subtitles size={40} weight="duotone" /> : <Microphone size={40} weight="duotone" />}
-              <p>{mode === "transcribe" ? t("上传录音，得到文字稿和字幕") : t("输入文字，选一个音色")}</p>
-            </div>
+            <Welcome
+              title="文字转语音"
+              subtitle="选一个音色把文字读出来，也可以用几秒钟录音克隆你自己的声音。"
+              examples={TTS_EXAMPLES}
+              kind="text"
+              onPick={runExample}
+              disabled={!serviceReady || job.running || !ttsModel?.installed}
+            />
           )}
           <JobOverlay job={job} />
         </div>
@@ -224,6 +267,10 @@ export function SpeechPage({ features, serviceReady , onModelsChanged }) {
         ) : null}
         {recent.filter((r) => r.task === mode).length ? (
           <div className="recent-strip recent-strip-flat">
+            <button type="button" className={shown ? "recent-item recent-examples" : "recent-item recent-examples is-active"} onClick={() => setCurrent(null)}>
+              <strong><Sparkle size={14} weight="fill" /> {t("示例")}</strong>
+              <span>{t("灵感和例子")}</span>
+            </button>
             {recent
               .filter((r) => r.task === mode)
               .slice(0, 8)

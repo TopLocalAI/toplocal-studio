@@ -86,7 +86,8 @@ def _split_line(text: str, start: float, end: float, limit: int) -> list[tuple[f
 async def transcribe(job: Job) -> dict:
     p = job.params
     source = uploads.resolve(p.get("source"))
-    tier = p.get("quality") if p.get("quality") in ASR_MODELS else "standard"
+    by_model = {m: q for q, (m, _) in ASR_MODELS.items()}
+    tier = by_model.get(p.get("model")) or (p.get("quality") if p.get("quality") in ASR_MODELS else "standard")
     model_id, family = ASR_MODELS[tier]
     model = catalog.model_path(model_id)
     if model is None:
@@ -201,7 +202,9 @@ async def synthesize(job: Job) -> dict:
     wav = job.dir / "speech.wav"
     has_latin = bool(re.search(r"[A-Za-z]{2,}", text))
 
-    if voice.get("preset") in KOKORO_VOICES and not has_latin:
+    # Kokoro reads preset voices fastest but skips Latin words; Qwen3-TTS is chosen
+    # explicitly (model picker), for cloned voices, or when the text contains English.
+    if voice.get("preset") in KOKORO_VOICES and not has_latin and p.get("model") != "speech.tts":
         job.update(20, tr("正在朗读"))
         await _kokoro(job, text, voice["preset"], wav)
         engine = "kokoro"

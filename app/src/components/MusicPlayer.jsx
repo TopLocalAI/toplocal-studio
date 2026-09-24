@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
-import { MusicNotes, Pause, Play, SkipBack, SkipForward, SpeakerHigh } from "@phosphor-icons/react";
+import { Pause, Play, SkipBack, SkipForward, SpeakerHigh } from "@phosphor-icons/react";
 import { formatDuration } from "../api";
 import { t } from "../i18n";
 
@@ -65,7 +65,7 @@ function Waveform({ seed, currentTime, duration, onSeek }) {
   );
 }
 
-export function MusicPlayer({ song, player, overlay }) {
+export function MusicPlayer({ song, player, overlay, empty }) {
   const duration = player.duration || song?.result?.duration || 0;
   const lyrics = song?.result?.lyrics && song.result.lyrics !== "[instrumental]" ? song.result.lyrics : "";
 
@@ -119,10 +119,7 @@ export function MusicPlayer({ song, player, overlay }) {
           {lyrics ? <Lyrics text={lyrics} /> : null}
         </>
       ) : (
-        <div className="result-empty">
-          <MusicNotes size={40} />
-          <p>{t("写好描述，点“生成歌曲”")}</p>
-        </div>
+        empty
       )}
       {overlay}
     </section>

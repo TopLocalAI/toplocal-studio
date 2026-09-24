@@ -47,6 +47,9 @@ def _prepare_source(src, dest, max_pixels=1024 * 1024) -> tuple[int, int]:
     return nw, nh
 
 
+KLEIN = {"image.klein4b": "flux2-klein-4b", "image.klein9b": "flux2-klein-9b"}  # model id → mflux base model
+
+
 def _sdcpp_model(model_id: str) -> list:
     return [*sdcpp.base_args(), "--diffusion-model", catalog.part(model_id, "diffusion"),
             "--vae", catalog.part(model_id, "vae"), "--llm", catalog.part(model_id, "llm")]
@@ -82,28 +85,30 @@ async def generate(job: Job) -> dict:
     styles = [str(s) for s in p.get("styles", [])][:3]
     width, height = ASPECTS.get(p.get("aspect"), ASPECTS["1:1"])
     seed = int(p.get("seed") or random.randint(1, 2**31 - 1))
-    fast = p.get("quality") == "fast"
-    model_id = "image.klein4b" if fast else "image.zimage"
+    # Older clients send quality=fast instead of a model.
+    requested = p.get("model") or ("image.klein4b" if p.get("quality") == "fast" else None)
+    model_id = catalog.task_model("image.generate", requested, system.memory_gb())
+    klein = model_id in KLEIN
     if not catalog.installed(model_id):
         raise JobFailed(tr("图片模型未安装，请在设置里下载"))
     job.title = text[:16]
-    job.params = {**p, "seed": seed}
+    job.params = {**p, "seed": seed, "model": model_id}
     out = job.dir / "image.png"
     if config.DIFFUSION_ENGINE == "sdcpp":
-        steps = 4 if fast else 8
+        steps = 4 if klein else 8
         job.dir.mkdir(parents=True, exist_ok=True)
         await sdcpp.run(job, [*_sdcpp_model(model_id), "--cfg-scale", "1.0", "--steps", steps,
-                              *(["--sampling-method", "euler"] if fast else []),
+                              *(["--sampling-method", "euler"] if klein else []),
                               "-p", _prompt(text, styles), "-W", width, "-H", height, "-s", seed, "-o", out],
-                        steps=steps, expected=20 if fast else 40)
+                        steps=steps, expected=20 if model_id == "image.klein4b" else 40)
         if not out.exists():
             raise JobFailed(tr("生成完成，但没有找到图片"))
         return {"image": "image.png", "width": width, "height": height, "model": model_id}
     model_dir = catalog.model_path(model_id).parent
-    if fast:
-        cmd = [*config.engine_cmd("mflux-generate-flux2"), "--model", model_dir, "--base-model", "flux2-klein-4b",
+    if klein:
+        cmd = [*config.engine_cmd("mflux-generate-flux2"), "--model", model_dir, "--base-model", KLEIN[model_id],
                "--steps", "4"]
-        steps, expected = 4, 15
+        steps, expected = 4, 15 if model_id == "image.klein4b" else 35
     else:
         cmd = [*config.engine_cmd("mflux-generate-z-image-turbo"), "--model", model_dir, "--steps", "8"]
         steps, expected = 8, 40
@@ -122,13 +127,13 @@ async def edit(job: Job) -> dict:
         raise JobFailed(tr("请描述想怎么修改这张图"))
     source = uploads.resolve(p.get("source"))
     # klein 9B edits best but needs the 24–32 GB class; 16 GB machines use klein 4B.
-    big = system.tier(system.memory_gb()) != "16" and catalog.installed("image.klein9b")
-    model_id = "image.klein9b" if big else "image.klein4b"
+    model_id = catalog.task_model("image.edit", p.get("model"), system.memory_gb())
+    big = model_id == "image.klein9b"
     if not catalog.installed(model_id):
         raise JobFailed(tr("图片编辑模型未安装，请在设置里下载"))
     seed = int(p.get("seed") or random.randint(1, 2**31 - 1))
     job.title = tr("编辑 · {text}", text=text[:12])
-    job.params = {**p, "seed": seed}
+    job.params = {**p, "seed": seed, "model": model_id}
     job.dir.mkdir(parents=True, exist_ok=True)
     src = job.dir / "source.png"
     width, height = _prepare_source(source, src)
@@ -142,7 +147,7 @@ async def edit(job: Job) -> dict:
         return {"image": "image.png", "source": "source.png", "width": width, "height": height, "model": model_id}
     model_dir = catalog.model_path(model_id)
     cmd = [*config.engine_cmd("mflux-generate-flux2-edit"), "--image-paths", src, "--model", model_dir.parent,
-           "--base-model", "flux2-klein-9b" if big else "flux2-klein-4b", "--steps", "4",
+           "--base-model", KLEIN[model_id], "--steps", "4",
            "--prompt", text, "--width", width, "--height", height, "--seed", seed, "--low-ram", "--output", out]
     await _run_mflux(job, cmd, 4, 40 if big else 22)
     if not out.exists():

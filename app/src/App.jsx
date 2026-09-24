@@ -19,6 +19,19 @@ function initialTheme() {
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
+// Hides an inactive page without unmounting it; videos pause when their page is hidden.
+function KeepAlive({ active, children }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!active) ref.current?.querySelectorAll("video").forEach((v) => v.pause());
+  }, [active]);
+  return (
+    <div ref={ref} className="page-slot" hidden={!active}>
+      {children}
+    </div>
+  );
+}
+
 export function App() {
   const [page, setPage] = useState("music");
   const [theme, setTheme] = useState(initialTheme);
@@ -79,6 +92,7 @@ export function App() {
       .then(() => {
         setServiceLanguage(language);
         refreshSystem();
+        window.dispatchEvent(new Event("toplocal:language")); // model lists reload translated
       })
       .catch(() => {});
   }, [language, service, refreshSystem]);
@@ -90,9 +104,15 @@ export function App() {
     <div className="app-shell">
       <Rail page={page} onNavigate={navigate} onAbout={showAbout} features={features} service={service} onRetry={refreshSystem} />
       <div className="app-main">
-        {page === "music" && <MusicPage onModelsChanged={refreshSystem} features={features} serviceReady={service === "ready"} />}
-        {page === "image" && (
-          <ImagePage onModelsChanged={refreshSystem}
+        {/* Creation pages stay mounted so a result, typed text and running jobs survive
+            switching tabs; library and settings reload each time they are opened. */}
+        <KeepAlive active={page === "music"}>
+          <MusicPage active={page === "music"} onModelsChanged={refreshSystem} features={features} serviceReady={service === "ready"} />
+        </KeepAlive>
+        <KeepAlive active={page === "image"}>
+          <ImagePage
+            active={page === "image"}
+            onModelsChanged={refreshSystem}
             features={features}
             serviceReady={service === "ready"}
             onAnimate={(source) => {
@@ -100,17 +120,21 @@ export function App() {
               setPage("video");
             }}
           />
-        )}
-        {page === "speech" && <SpeechPage onModelsChanged={refreshSystem} features={features} serviceReady={service === "ready"} />}
-        {page === "video" && (
-          <VideoPage onModelsChanged={refreshSystem}
+        </KeepAlive>
+        <KeepAlive active={page === "speech"}>
+          <SpeechPage active={page === "speech"} onModelsChanged={refreshSystem} features={features} serviceReady={service === "ready"} />
+        </KeepAlive>
+        <KeepAlive active={page === "video"}>
+          <VideoPage
+            active={page === "video"}
+            onModelsChanged={refreshSystem}
             features={features}
             serviceReady={service === "ready"}
             system={system}
             initialSource={videoSource}
             onSourceUsed={clearVideoSource}
           />
-        )}
+        </KeepAlive>
         {page === "library" && <LibraryPage onOpenModule={setPage} />}
         {page === "settings" && (
           <SettingsPage system={system} theme={theme} onThemeChange={setTheme} language={language} serviceLanguage={serviceLanguage} onLanguageChange={setLanguage} onRefresh={refreshSystem} focus={settingsFocus} />

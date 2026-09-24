@@ -10,6 +10,11 @@ import {
 } from "@phosphor-icons/react";
 import { api, fileUrl, formatDuration, saveResult } from "../api";
 import { ModelGate } from "../components/ModelGate";
+import { ModelPicker } from "../components/ModelPicker";
+import { Welcome } from "../components/Welcome";
+import { MUSIC_EXAMPLES } from "../examples";
+import { useModels } from "../hooks/useModels";
+import { useTaskModel } from "../hooks/useTaskModel";
 import { Toast, useToast } from "../components/Toast";
 import { ExportDialog } from "../components/ExportDialog";
 import { JobOverlay } from "../components/JobOverlay";
@@ -30,13 +35,12 @@ function estimate(engine, mode, duration, text) {
   return 15 + 0.65 * duration + (mode === "prompt" ? 15 : 0);
 }
 
-export function MusicPage({ features, serviceReady , onModelsChanged }) {
+export function MusicPage({ active = true, features, serviceReady , onModelsChanged }) {
   const [mode, setMode] = useState("prompt");
   // Unedited modes fall back to the default text in the current UI language.
   const [texts, setTexts] = useState({});
   const [styles, setStyles] = useState(["华语流行", "温柔", "女声"]);
   const [duration, setDuration] = useState(120);
-  const [engine, setEngine] = useState("standard");
   const [visual, setVisual] = useState("flow");
   const [song, setSong] = useState(null);
   const [recent, setRecent] = useState([]);
@@ -52,27 +56,30 @@ export function MusicPage({ features, serviceReady , onModelsChanged }) {
   };
 
   const feature = (id) => features.find((f) => f.id === id);
-  const standardReady = feature("music.standard")?.ready;
-  const chineseReady = feature("music.chinese")?.ready;
   const writerReady = feature("music.writer")?.ready;
+  const { models, tasks } = useModels(onModelsChanged);
+  // YuE2 only sings: instrumentals always use ACE-Step.
+  const options = (tasks["music.generate"] || []).filter((o) => mode !== "instrumental" || o.model !== "music.yue2");
+  const [model, setModel] = useTaskModel("music.generate", tasks["music.generate"]);
+  const chosen = options.find((o) => o.model === model?.model) || options.find((o) => o.supported) || null;
   const modeInfo = MUSIC_MODES.find((m) => m.id === mode);
   const text = texts[mode] ?? t(modeInfo.defaultValue);
-  const effectiveEngine = mode === "instrumental" ? "standard" : engine;
+  const effectiveEngine = chosen?.model === "music.yue2" ? "chinese" : "standard";
 
   const loadRecent = useCallback(async () => {
     try {
       const { items } = await api.library("music");
       const songs = items.filter((i) => i.task === "generate");
       setRecent(songs);
-      setSong((current) => current || songs[0] || null);
+      setSong((c) => (c && !songs.some((i) => i.id === c.id) ? null : c)); // deleted in the library
     } catch {
       /* service not ready yet */
     }
   }, []);
 
   useEffect(() => {
-    if (serviceReady) loadRecent();
-  }, [serviceReady, loadRecent]);
+    if (serviceReady && active) loadRecent();
+  }, [serviceReady, active, loadRecent]);
 
   const generation = useJob((finished) => {
     if (finished.status === "done") {
@@ -96,24 +103,36 @@ export function MusicPage({ features, serviceReady , onModelsChanged }) {
   const audioSrc = useMemo(() => (song?.result?.audio ? fileUrl(song.id, song.result.audio) : ""), [song]);
   const player = useAudioPlayer(audioSrc, 0);
 
-  const blocked =
-    (effectiveEngine === "standard" && !standardReady) ||
-    (effectiveEngine === "chinese" && !chineseReady) ||
-    (mode === "prompt" && !writerReady);
+  const blocked = !chosen?.installed || (mode === "prompt" && !writerReady);
   const blockedReason = !serviceReady
     ? t("正在连接本地引擎")
-    : effectiveEngine === "chinese" && !chineseReady
-      ? t("中文精唱模型未安装")
-      : !standardReady
-        ? t("音乐模型未安装")
-        : mode === "prompt" && !writerReady
-          ? t("一句话写歌需要先下载写作助手")
-          : "";
+    : !chosen?.installed
+      ? t("先下载所选模型")
+      : mode === "prompt" && !writerReady
+        ? t("一句话写歌需要先下载写作助手")
+        : "";
 
   const start = async () => {
     setError("");
     try {
-      await generation.submit("music", "generate", { mode, text, styles, duration, engine: effectiveEngine });
+      await generation.submit("music", "generate", { mode, text, styles, duration, engine: effectiveEngine, model: chosen?.model });
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  const runExample = async (ex) => {
+    const prompt = t(ex.prompt);
+    const exampleModel = ex.mode === "instrumental" ? "music.ace" : chosen?.model;
+    setMode(ex.mode);
+    setTexts((prev) => ({ ...prev, [ex.mode]: prompt }));
+    if (ex.styles.length) setStyles(ex.styles);
+    setError("");
+    try {
+      await generation.submit("music", "generate", {
+        mode: ex.mode, text: prompt, styles: ex.styles, duration: 60, model: exampleModel,
+        engine: exampleModel === "music.yue2" ? "chinese" : "standard",
+      });
     } catch (e) {
       setError(e.message);
     }
@@ -195,34 +214,10 @@ export function MusicPage({ features, serviceReady , onModelsChanged }) {
           </div>
         </div>
 
-        {mode !== "instrumental" ? (
-          <div className="field-group">
-            <span className="field-label">{t("演唱")}</span>
-            <div className="segmented" role="radiogroup" aria-label={t("演唱引擎")}>
-              <button
-                type="button"
-                role="radio"
-                aria-checked={engine === "standard"}
-                className={engine === "standard" ? "is-active" : ""}
-                onClick={() => setEngine("standard")}
-              >
-                <strong>{t("标准")}</strong>
-                <small>{t("速度快，可定时长")}</small>
-              </button>
-              <button
-                type="button"
-                role="radio"
-                aria-checked={engine === "chinese"}
-                className={engine === "chinese" ? "is-active" : ""}
-                onClick={() => setEngine("chinese")}
-                disabled={!chineseReady}
-              >
-                <strong>{t("中文精唱")}</strong>
-                <small>{chineseReady ? t("咬字最准，时长随歌词") : t("未安装")}</small>
-              </button>
-            </div>
-          </div>
-        ) : null}
+        <div className="field-group">
+          <span className="field-label">{t("模型")}</span>
+          <ModelPicker options={options} value={chosen} onChange={setModel} models={models} />
+        </div>
 
         {effectiveEngine === "standard" ? (
           <div className="field-group duration-group">
@@ -251,12 +246,27 @@ export function MusicPage({ features, serviceReady , onModelsChanged }) {
           {blockedReason || t("预计约 {time}，全部在本机完成", { time: formatDuration(expected) })}
         </p>
         {error ? <p className="form-error" role="alert">{error}</p> : null}
-        {serviceReady ? <ModelGate features={features} featureIds={effectiveEngine === "chinese" ? ["music.chinese"] : mode === "prompt" ? ["music.standard", "music.writer"] : ["music.standard"]} onInstalled={onModelsChanged} /> : null}
+        {serviceReady ? <ModelGate modelIds={[chosen?.model, mode === "prompt" ? "llm.writer" : null]} onInstalled={onModelsChanged} /> : null}
 
       </aside>
 
       <main className="studio-stage">
-        <MusicPlayer song={song} player={player} overlay={<JobOverlay job={generation} />} />
+        <MusicPlayer
+          song={song}
+          player={player}
+          overlay={<JobOverlay job={generation} />}
+          empty={
+            <Welcome
+              title="写一首歌"
+              subtitle="一句话、自己的歌词或纯音乐，都能生成完整的歌曲。"
+              examples={MUSIC_EXAMPLES}
+              kind="music"
+              onPick={runExample}
+              disabled={!serviceReady || generation.running || !chosen?.installed || !writerReady}
+            />
+          }
+        />
+        {song ? (
         <div className="song-actions">
           <button type="button" className="button button-secondary" disabled={!song} onClick={() => save(song.id, song.result.audio, song.title)}>
             <DownloadSimple size={18} /> {t("下载音频")}
@@ -265,8 +275,13 @@ export function MusicPage({ features, serviceReady , onModelsChanged }) {
             <FilmStrip size={18} /> {t("导出动效视频")}
           </button>
         </div>
-        {recent.length > 1 ? (
+        ) : null}
+        {recent.length ? (
           <div className="recent-strip recent-strip-flat" aria-label={t("最近生成")}>
+            <button type="button" className={song ? "recent-item recent-examples" : "recent-item recent-examples is-active"} onClick={() => setSong(null)}>
+              <strong><Sparkle size={14} weight="fill" /> {t("示例")}</strong>
+              <span>{t("灵感和例子")}</span>
+            </button>
             {recent.slice(0, 8).map((item) => (
               <button key={item.id} type="button" className={song?.id === item.id ? "recent-item is-active" : "recent-item"} onClick={() => setSong(item)}>
                 <strong>{item.title || t("未命名")}</strong>

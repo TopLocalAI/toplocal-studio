@@ -80,6 +80,7 @@ async def system_info(_):
 async def models(_):
     status = DOWNLOADS.status()
     return web.json_response({"models": [m | {"download": status.get(m["id"])} for m in catalog.models_status()],
+                              "tasks": catalog.tasks_status(system.memory_gb()),
                               "hasHfToken": bool(settings.get("hfToken"))})
 
 

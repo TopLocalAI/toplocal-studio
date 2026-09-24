@@ -780,3 +780,372 @@ button.token-tag {
 .general-item h2 {
   margin-bottom: 10px;
 }
+
+/* Prompt boxes: a fixed, compact height; longer text scrolls inside the box. */
+.prompt-input {
+  height: 150px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.prompt-input.is-lyrics {
+  height: 210px;
+}
+
+.prompt-short {
+  height: 110px;
+  min-height: 0 !important;
+}
+
+.prompt-group {
+  flex: 0 0 auto;
+}
+
+/* Model picker */
+.model-picker {
+  position: relative;
+}
+
+.model-picker-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  color: var(--text);
+  background: var(--surface);
+  text-align: left;
+  cursor: pointer;
+}
+
+.model-picker-button:hover:not(:disabled) {
+  border-color: var(--text-soft);
+}
+
+.model-picker-button:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.model-picker-button > svg {
+  flex: none;
+  color: var(--muted);
+}
+
+.model-picker-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.model-picker-main strong,
+.model-option-text strong {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.model-picker-main small {
+  color: var(--text-soft);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.model-badge {
+  padding: 1px 7px;
+  border-radius: 9999px;
+  color: var(--brand);
+  background: color-mix(in srgb, var(--brand) 12%, transparent);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 600;
+}
+
+.model-picker-list {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 6px);
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+}
+
+.model-option {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 10px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--text);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.model-option:hover:not(:disabled),
+.model-option.is-selected {
+  background: var(--surface-hover);
+}
+
+.model-option:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.model-option > svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+.model-option-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.model-option-text > span {
+  color: var(--text-soft);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.model-option-text small {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.model-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--warn);
+  font-weight: 500;
+}
+
+.model-note.is-muted {
+  color: var(--muted);
+}
+
+/* Welcome and examples on the result side */
+.result-frame > .welcome,
+.quiet-player > .welcome {
+  align-self: stretch;
+  justify-self: stretch;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background: var(--surface);
+}
+
+.welcome {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 36px 40px;
+}
+
+.quiet-player:has(> .welcome) {
+  padding: 0;
+}
+
+.welcome-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.welcome-head > svg {
+  flex: none;
+  margin-top: 5px;
+  color: var(--brand);
+}
+
+.welcome-head h2 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.welcome-head p {
+  margin: 6px 0 0;
+  color: var(--text-soft);
+  font-size: 14px;
+}
+
+.welcome-label {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+.welcome-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 14px;
+}
+
+.welcome-grid.is-video {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.welcome-grid.is-text {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.example-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  background: var(--panel);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 160ms ease, box-shadow 200ms ease, transform 200ms ease;
+}
+
+.example-card:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+}
+
+.example-card:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.example-thumb {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--panel-muted);
+}
+
+.welcome-grid.is-video .example-thumb {
+  aspect-ratio: 16 / 9;
+}
+
+.welcome-grid.is-music .example-thumb {
+  aspect-ratio: 1 / 1;
+}
+
+.example-thumb img,
+.example-thumb video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.example-go {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 9999px;
+  color: #fff;
+  background: rgba(20, 20, 20, 0.62);
+  font-size: 12px;
+  font-style: normal;
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.example-card:hover:not(:disabled) .example-go {
+  opacity: 1;
+}
+
+.example-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px 14px;
+}
+
+.example-text strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.example-text small {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--text-soft);
+  font-size: 12px;
+  line-height: 1.5;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.welcome-grid.is-text .example-text small {
+  -webkit-line-clamp: 3;
+}
+
+/* "Examples" entry in the recent strips */
+.thumb-examples {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--brand);
+  background: var(--panel-muted);
+  border: 2px solid transparent;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.thumb-examples span {
+  color: var(--text-soft);
+}
+
+.recent-examples strong {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.recent-examples strong svg {
+  color: var(--brand);
+}
+
+.page-slot {
+  height: 100%;
+}
+
+.page-slot[hidden] {
+  display: none;
+}
+
+.composer-panel .duration-group + .field-group {
+  margin-top: 4px;
+}

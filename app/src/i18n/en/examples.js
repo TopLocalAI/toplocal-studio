@@ -1,0 +1,71 @@
+// English UI strings, keyed by the Chinese source text: model picker, welcome, examples.
+export default {
+  // Model picker
+  "模型": "Model",
+  "推荐": "Recommended",
+  "选择模型": "Choose a model",
+  "未下载": "Not downloaded",
+  "需要 {memory} 以上内存": "Needs {memory}+ memory",
+  "先下载所选模型": "Download the selected model first",
+
+  // Welcome and examples
+  "试试这些例子，点一下就开始生成": "Try an example. One click starts generating",
+  "示例": "Examples",
+  "灵感和例子": "Ideas and examples",
+  "生成": "Generate",
+  "画一张图，或改一张图": "Create an image, or edit one",
+  "用一句话描述画面，中英文字也能写对；也可以上传图片，说说想怎么改。": "Describe a scene in a sentence, even with text in it, or upload a picture and say how to change it.",
+  "让画面动起来": "Bring a scene to life",
+  "用一句话或一张图片，生成几秒钟带声音的短视频。": "Turn a sentence or a picture into a few seconds of video with sound.",
+  "写一首歌": "Write a song",
+  "一句话、自己的歌词或纯音乐，都能生成完整的歌曲。": "From an idea, your own lyrics or an instrumental brief, get a complete song.",
+  "录音转文字": "Speech to text",
+  "上传录音或视频，得到文字稿和字幕，长度不限，方言也能听懂。": "Upload a recording or video to get a transcript and subtitles, any length, dialects included.",
+  "文字转语音": "Text to speech",
+  "选一个音色把文字读出来，也可以用几秒钟录音克隆你自己的声音。": "Pick a voice to read your text, or clone your own voice from a few seconds of audio.",
+
+  // Image examples
+  "咖啡店海报": "Café poster",
+  "一张秋日咖啡店海报，标题写着“秋日限定”，一杯南瓜拿铁，暖色调": "An autumn café poster titled \"Autumn Special\", a pumpkin latte, warm tones",
+  "水墨山水": "Ink landscape",
+  "云雾缭绕的山间小屋，远处有瀑布": "A cabin in misty mountains with a waterfall in the distance",
+  "午后的猫": "Afternoon cat",
+  "窗台上晒太阳的橘猫，柔和的午后光线": "An orange cat sunbathing on a windowsill in soft afternoon light",
+  "雨夜城市": "Rainy city night",
+  "雨夜的未来城市街道，霓虹灯倒映在积水里": "A futuristic city street on a rainy night, neon lights reflected in puddles",
+  "浇花机器人": "Gardening robot",
+  "一个可爱的小机器人在阳台上给花浇水": "A cute little robot watering flowers on a balcony",
+  "樱花少女": "Under the cherry blossoms",
+  "樱花树下的少女，微风吹起花瓣": "A girl under a cherry tree, petals drifting in the breeze",
+
+  // Video examples
+  "海边日落": "Sunset by the sea",
+  "海浪拍打礁石，夕阳下的海鸥飞过": "Waves crash on the rocks as seagulls fly through the sunset",
+  "窗台上的猫": "Cat on the windowsill",
+  "一只橘猫在窗台上伸懒腰，窗外下着小雨": "An orange cat stretches on the windowsill while light rain falls outside",
+  "雨夜街头": "Rainy street",
+  "城市街道的雨夜，霓虹灯倒映在积水里，行人撑伞走过": "A city street on a rainy night, neon reflected in puddles, people walking with umbrellas",
+  "峡谷热气球": "Balloon over a canyon",
+  "日出时热气球缓缓飞过峡谷，镜头慢慢推进": "At sunrise a hot-air balloon drifts over a canyon as the camera slowly pushes in",
+
+  // Music examples
+  "夏日海边": "Summer by the sea",
+  "一首关于夏天海边的轻快华语流行歌，清爽男声，副歌朗朗上口": "An upbeat pop song about summer at the beach, fresh male vocals, a catchy chorus",
+  "一首雨夜城市感的抒情歌，温柔女声，钢琴和弦乐": "A ballad about a rainy city night, gentle female vocals, piano and strings",
+  "月下竹林": "Bamboo under the moon",
+  "一首中国风古风歌曲，古筝与笛子，意境悠远": "A traditional Chinese-style song with guzheng and bamboo flute, calm and far-reaching",
+  "雨天学习": "Rainy-day study",
+  "雨天书桌旁的 lo-fi 学习音乐，电钢琴与轻柔鼓点，放松专注": "Lo-fi study music for a rainy day at the desk, electric piano and soft beats, relaxed and focused",
+
+  // Speech examples
+  "新闻播报": "News bulletin",
+  "今天是个好天气，全国大部分地区晴到多云，气温适宜，适合外出活动。": "It's a lovely day. Most of the country will see sun and some clouds, with mild temperatures that are perfect for going out.",
+  "睡前故事": "Bedtime story",
+  "从前，森林里住着一只小兔子，它每天晚上都会抬头数星星，数着数着就睡着了。": "Once upon a time, a little rabbit lived in the forest. Every night it counted the stars until it fell asleep.",
+  "中英混读": "Mixed Chinese and English",
+  "TopLocal Studio 可以在你的电脑上生成图片、视频、音乐和语音，完全离线运行。": "TopLocal Studio creates images, video, music and speech on your own computer, completely offline.",
+  "示例录音": "Sample recording",
+  "英文录音": "English recording",
+  "一段英文介绍，自动识别语言并生成字幕": "An English introduction: the language is detected automatically",
+  "一段 15 秒的普通话介绍，看看转写效果和字幕": "A 15-second Mandarin introduction: see the transcript and subtitles",
+};

@@ -4,6 +4,11 @@ import { api, fileUrl, saveResult } from "../api";
 import { SourcePicker } from "../components/SourcePicker";
 import { JobOverlay } from "../components/JobOverlay";
 import { ModelGate } from "../components/ModelGate";
+import { ModelPicker } from "../components/ModelPicker";
+import { Welcome } from "../components/Welcome";
+import { IMAGE_EXAMPLES } from "../examples";
+import { useModels } from "../hooks/useModels";
+import { useTaskModel } from "../hooks/useTaskModel";
 import { Toast, useToast } from "../components/Toast";
 import { useJob } from "../hooks/useJob";
 import { t } from "../i18n";
@@ -11,36 +16,38 @@ import { t } from "../i18n";
 const ASPECTS = ["1:1", "4:3", "3:4", "16:9", "9:16"];
 const STYLES = ["写实照片", "插画", "动漫", "3D", "水墨", "海报", "电影感"];
 
-export function ImagePage({ features, serviceReady, onAnimate , onModelsChanged }) {
+export function ImagePage({ active = true, features, serviceReady, onAnimate , onModelsChanged }) {
   const [mode, setMode] = useState("generate");
   const [text, setText] = useState("");
   const [editText, setEditText] = useState("");
   const [styles, setStyles] = useState([]);
   const [aspect, setAspect] = useState("1:1");
-  const [quality, setQuality] = useState("standard");
   const [source, setSource] = useState(null);
   const [current, setCurrent] = useState(null);
   const [recent, setRecent] = useState([]);
   const [error, setError] = useState("");
   const toast = useToast();
 
-  const ready = (id) => features.find((f) => f.id === id)?.ready;
-  const createReady = ready("image.create");
-  const editReady = ready("image.edit") || createReady; // edit falls back to klein 4B on 16 GB
+  const { models, tasks } = useModels(onModelsChanged);
+  const [genModel, setGenModel] = useTaskModel("image.generate", tasks["image.generate"]);
+  const [editModel, setEditModel] = useTaskModel("image.edit", tasks["image.edit"]);
+  const selected = mode === "generate" ? genModel : editModel;
+  const createReady = Boolean(genModel?.installed);
+  const editReady = Boolean(editModel?.installed);
 
   const loadRecent = useCallback(async () => {
     try {
       const { items } = await api.library("image");
       setRecent(items);
-      setCurrent((c) => c || items[0] || null);
+      setCurrent((c) => (c && !items.some((i) => i.id === c.id) ? null : c)); // deleted in the library
     } catch {
       /* not ready */
     }
   }, []);
 
   useEffect(() => {
-    if (serviceReady) loadRecent();
-  }, [serviceReady, loadRecent]);
+    if (serviceReady && active) loadRecent();
+  }, [serviceReady, active, loadRecent]);
 
   const job = useJob((finished) => {
     if (finished.status === "done") {
@@ -53,10 +60,24 @@ export function ImagePage({ features, serviceReady, onAnimate , onModelsChanged 
     setError("");
     try {
       if (mode === "generate") {
-        await job.submit("image", "generate", { text, styles, aspect, quality, ...overrides });
+        await job.submit("image", "generate", { text, styles, aspect, model: genModel?.model, ...overrides });
       } else {
-        await job.submit("image", "edit", { text: editText, source, ...overrides });
+        await job.submit("image", "edit", { text: editText, source, model: editModel?.model, ...overrides });
       }
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  const runExample = async (ex) => {
+    const prompt = t(ex.prompt);
+    setMode("generate");
+    setText(prompt);
+    setStyles(ex.styles);
+    setAspect(ex.aspect);
+    setError("");
+    try {
+      await job.submit("image", "generate", { text: prompt, styles: ex.styles, aspect: ex.aspect, model: genModel?.model });
     } catch (e) {
       setError(e.message);
     }
@@ -70,7 +91,7 @@ export function ImagePage({ features, serviceReady, onAnimate , onModelsChanged 
 
   const canRun =
     serviceReady && !job.running && (mode === "generate" ? text.trim() && createReady : editText.trim() && source && editReady);
-  const estimate = mode === "generate" ? (quality === "fast" ? t("约 15 秒") : t("约 40 秒")) : t("约 20–40 秒");
+  const estimate = selected?.speed || "";
 
   return (
     <div className="studio">
@@ -132,19 +153,6 @@ export function ImagePage({ features, serviceReady, onAnimate , onModelsChanged 
                 })}
               </div>
             </div>
-            <div className="field-group">
-              <span className="field-label">{t("模式")}</span>
-              <div className="segmented" role="radiogroup">
-                <button type="button" role="radio" aria-checked={quality === "standard"} className={quality === "standard" ? "is-active" : ""} onClick={() => setQuality("standard")}>
-                  <strong>{t("精细")}</strong>
-                  <small>{t("画质好，中英文字准确")}</small>
-                </button>
-                <button type="button" role="radio" aria-checked={quality === "fast"} className={quality === "fast" ? "is-active" : ""} onClick={() => setQuality("fast")}>
-                  <strong>{t("极速")}</strong>
-                  <small>{t("约 15 秒，不适合写字")}</small>
-                </button>
-              </div>
-            </div>
           </>
         ) : (
           <>
@@ -168,15 +176,25 @@ export function ImagePage({ features, serviceReady, onAnimate , onModelsChanged 
           </>
         )}
 
+        <div className="field-group">
+          <span className="field-label">{t("模型")}</span>
+          <ModelPicker
+            options={tasks[mode === "generate" ? "image.generate" : "image.edit"]}
+            value={selected}
+            onChange={mode === "generate" ? setGenModel : setEditModel}
+            models={models}
+          />
+        </div>
+
         <button type="button" className="generate-button" disabled={!canRun} onClick={() => run()}>
           <Sparkle size={21} weight="fill" />
           <span>{job.running ? t("正在生成…") : mode === "generate" ? t("生成图片") : t("开始修改")}</span>
         </button>
         <p className="generate-note">
-          {!serviceReady ? t("正在连接本地引擎") : !createReady ? t("图片模型未安装，请到设置里下载") : t("预计{estimate}，全部在本机完成", { estimate })}
+          {!serviceReady ? t("正在连接本地引擎") : !selected?.installed ? t("先下载所选模型") : t("预计{estimate}，全部在本机完成", { estimate })}
         </p>
         {error ? <p className="form-error" role="alert">{error}</p> : null}
-        {serviceReady ? <ModelGate features={features} featureIds={mode === "generate" ? ["image.create"] : ["image.edit"]} onInstalled={onModelsChanged} /> : null}
+        {serviceReady ? <ModelGate modelIds={[selected?.model]} onInstalled={onModelsChanged} /> : null}
       </aside>
 
       <main className="studio-stage">
@@ -184,10 +202,13 @@ export function ImagePage({ features, serviceReady, onAnimate , onModelsChanged 
           {current?.result?.image ? (
             <img className="result-image" src={fileUrl(current.id, current.result.image)} alt={current.title} />
           ) : (
-            <div className="result-empty">
-              <MagicWand size={40} weight="duotone" />
-              <p>{t("描述一个画面，点“生成图片”")}</p>
-            </div>
+            <Welcome
+              title="画一张图，或改一张图"
+              subtitle="用一句话描述画面，中英文字也能写对；也可以上传图片，说说想怎么改。"
+              examples={IMAGE_EXAMPLES}
+              onPick={runExample}
+              disabled={!serviceReady || job.running || !createReady}
+            />
           )}
           <JobOverlay job={job} />
         </div>
@@ -209,8 +230,12 @@ export function ImagePage({ features, serviceReady, onAnimate , onModelsChanged 
             </button>
           </div>
         ) : null}
-        {recent.length > 1 ? (
+        {recent.length ? (
           <div className="thumb-strip" aria-label={t("最近生成")}>
+            <button type="button" className={current ? "thumb thumb-examples" : "thumb thumb-examples is-active"} onClick={() => setCurrent(null)} title={t("示例")}>
+              <Sparkle size={20} weight="fill" />
+              <span>{t("示例")}</span>
+            </button>
             {recent.slice(0, 12).map((item) => (
               <button key={item.id} type="button" className={current?.id === item.id ? "thumb is-active" : "thumb"} onClick={() => setCurrent(item)} title={item.title}>
                 <img src={fileUrl(item.id, item.result.image)} alt={item.title} />

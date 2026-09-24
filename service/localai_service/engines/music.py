@@ -67,7 +67,8 @@ async def generate(job: Job) -> dict:
     mode = p.get("mode", "prompt")
     text = str(p.get("text", "")).strip()
     styles = [str(s) for s in p.get("styles", [])][:6]
-    engine = "chinese" if p.get("engine") == "chinese" else "standard"
+    # The model picker sends a model id; older clients send engine=chinese.
+    engine = "chinese" if p.get("model") == "music.yue2" or p.get("engine") == "chinese" else "standard"
     duration = max(30, min(300, int(p.get("duration", 120))))
     seed = int(p.get("seed") or random.randint(1, 2**31 - 1))
     if not text:

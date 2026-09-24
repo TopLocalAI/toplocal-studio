@@ -4,6 +4,11 @@ import { api, fileUrl, saveResult } from "../api";
 import { JobOverlay } from "../components/JobOverlay";
 import { SourcePicker } from "../components/SourcePicker";
 import { ModelGate } from "../components/ModelGate";
+import { ModelPicker } from "../components/ModelPicker";
+import { Welcome } from "../components/Welcome";
+import { VIDEO_EXAMPLES } from "../examples";
+import { useModels } from "../hooks/useModels";
+import { useTaskModel } from "../hooks/useTaskModel";
 import { Toast, useToast } from "../components/Toast";
 import { useJob } from "../hooks/useJob";
 import { t } from "../i18n";
@@ -16,7 +21,7 @@ function estimate(seconds, resolution, withImage) {
   return s < 90 ? t("约 {s} 秒", { s }) : t("约 {m} 分钟", { m: Math.round(s / 60) });
 }
 
-export function VideoPage({ features, serviceReady, system, initialSource, onSourceUsed , onModelsChanged }) {
+export function VideoPage({ active = true, features, serviceReady, system, initialSource, onSourceUsed , onModelsChanged }) {
   const [mode, setMode] = useState(initialSource ? "image" : "text");
   const [text, setText] = useState("");
   const [source, setSource] = useState(initialSource || null);
@@ -38,21 +43,23 @@ export function VideoPage({ features, serviceReady, system, initialSource, onSou
 
   const feature = features.find((f) => f.id === "video.create");
   const supported = feature?.supported;
-  const ready = feature?.ready;
+  const { models, tasks } = useModels(onModelsChanged);
+  const [model, setModel] = useTaskModel("video.generate", tasks["video.generate"]);
+  const ready = Boolean(model?.installed);
 
   const loadRecent = useCallback(async () => {
     try {
       const { items } = await api.library("video");
       setRecent(items);
-      setCurrent((c) => c || items[0] || null);
+      setCurrent((c) => (c && !items.some((i) => i.id === c.id) ? null : c)); // deleted in the library
     } catch {
       /* not ready */
     }
   }, []);
 
   useEffect(() => {
-    if (serviceReady) loadRecent();
-  }, [serviceReady, loadRecent]);
+    if (serviceReady && active) loadRecent();
+  }, [serviceReady, active, loadRecent]);
 
   const job = useJob((finished) => {
     if (finished.status === "done") {
@@ -70,7 +77,20 @@ export function VideoPage({ features, serviceReady, system, initialSource, onSou
         resolution,
         enhance,
         source: mode === "image" ? source : null,
+        model: model?.model,
       });
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  const runExample = async (ex) => {
+    const prompt = t(ex.prompt);
+    setMode("text");
+    setText(prompt);
+    setError("");
+    try {
+      await job.submit("video", "generate", { text: prompt, seconds, resolution, enhance, source: null, model: model?.model });
     } catch (e) {
       setError(e.message);
     }
@@ -161,6 +181,11 @@ export function VideoPage({ features, serviceReady, system, initialSource, onSou
           </div>
         </div>
 
+        <div className="field-group">
+          <span className="field-label">{t("模型")}</span>
+          <ModelPicker options={tasks["video.generate"]} value={model} onChange={setModel} models={models} />
+        </div>
+
         <button type="button" className="generate-button" disabled={!canRun} onClick={run}>
           <Sparkle size={21} weight="fill" />
           <span>{job.running ? t("正在生成…") : t("生成视频")}</span>
@@ -169,11 +194,11 @@ export function VideoPage({ features, serviceReady, system, initialSource, onSou
           {!serviceReady
             ? t("正在连接本地引擎")
             : !ready
-              ? t("视频模型未安装，请到设置里下载")
+              ? t("先下载所选模型")
               : t("预计{estimate}，带声音，全部在本机完成", { estimate: estimate(seconds, resolution, mode === "image") })}
         </p>
         {error ? <p className="form-error" role="alert">{error}</p> : null}
-        {serviceReady ? <ModelGate features={features} featureIds={["video.create"]} onInstalled={onModelsChanged} /> : null}
+        {serviceReady ? <ModelGate modelIds={[model?.model]} onInstalled={onModelsChanged} /> : null}
       </aside>
 
       <main className="studio-stage">
@@ -181,10 +206,14 @@ export function VideoPage({ features, serviceReady, system, initialSource, onSou
           {current?.result?.video ? (
             <video key={current.id} className="result-video" src={fileUrl(current.id, current.result.video)} controls loop playsInline />
           ) : (
-            <div className="result-empty">
-              <FilmSlate size={40} weight="duotone" />
-              <p>{t("描述一个画面，或者从一张图片开始")}</p>
-            </div>
+            <Welcome
+              title="让画面动起来"
+              subtitle="用一句话或一张图片，生成几秒钟带声音的短视频。"
+              examples={VIDEO_EXAMPLES}
+              kind="video"
+              onPick={runExample}
+              disabled={!serviceReady || job.running || !ready}
+            />
           )}
           <JobOverlay job={job} />
         </div>
@@ -195,8 +224,12 @@ export function VideoPage({ features, serviceReady, system, initialSource, onSou
             </button>
           </div>
         ) : null}
-        {recent.length > 1 ? (
+        {recent.length ? (
           <div className="thumb-strip">
+            <button type="button" className={current ? "thumb thumb-wide thumb-examples" : "thumb thumb-wide thumb-examples is-active"} onClick={() => setCurrent(null)} title={t("示例")}>
+              <Sparkle size={20} weight="fill" />
+              <span>{t("示例")}</span>
+            </button>
             {recent.slice(0, 12).map((item) => (
               <button key={item.id} type="button" className={current?.id === item.id ? "thumb thumb-wide is-active" : "thumb thumb-wide"} onClick={() => setCurrent(item)} title={item.title}>
                 <video src={`${fileUrl(item.id, item.result.video)}#t=0.5`} preload="metadata" muted playsInline />

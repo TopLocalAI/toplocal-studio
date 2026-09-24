@@ -140,6 +140,68 @@ FEATURES = [
 
 _TIER_ORDER = {"16": 0, "32": 1, "64": 2}
 
+# Models the user can choose from for each task, best default first. `strength` says what
+# a model is good at; `minTier` overrides the model's usual memory floor for that task.
+# Adding a model to a task is a catalog change here plus its handling in the engine.
+TASKS = {
+    "image.generate": [
+        {"model": "image.zimage", "strength": "画质细腻，中英文字写得最准", "speed": "约 40 秒"},
+        {"model": "image.klein4b", "strength": "速度最快，适合快速出草图，写字较弱", "speed": "约 15 秒"},
+        {"model": "image.klein9b", "strength": "质感和细节更好，适合人像和写实场景", "speed": "约 40 秒", "minTier": "32"},
+    ],
+    "image.edit": [
+        {"model": "image.klein9b", "strength": "改图最准，原图细节保留最好", "speed": "约 40 秒", "minTier": "32"},
+        {"model": "image.klein4b", "strength": "速度快，16 GB 电脑也能用", "speed": "约 20 秒"},
+    ],
+    "video.generate": [
+        {"model": "video.ltx25", "strength": "文字或图片生成带声音的短视频，画面稳定", "speed": "5 秒视频约 2 分钟", "minTier": "32"},
+    ],
+    "music.generate": [
+        {"model": "music.ace", "strength": "速度快、风格多，可以设定时长，中英文都能唱", "speed": "1 分钟歌曲约 40 秒"},
+        {"model": "music.yue2", "strength": "中文咬字最准，时长跟随歌词（仅限非商用）", "speed": "约 1 分钟"},
+    ],
+    "speech.transcribe": [
+        {"model": "speech.asr", "strength": "准确又快，支持普通话、英语等多种语言", "speed": "1 小时录音约 3 分钟"},
+        {"model": "speech.asr-hq", "strength": "方言和口音识别更稳，速度稍慢", "speed": "1 小时录音约 5 分钟"},
+        {"model": "speech.asr-fast", "strength": "速度极快，适合很长的录音", "speed": "1 小时录音约 1 分钟"},
+    ],
+    "speech.synthesize": [
+        {"model": "speech.tts-fast", "strength": "速度最快，中文预设音色；遇到英文自动换用 Qwen3-TTS", "speed": "几秒"},
+        {"model": "speech.tts", "strength": "更自然，支持中英混读和声音克隆", "speed": "十几秒"},
+    ],
+}
+
+
+def task_model(task: str, requested, mem_gb: float):
+    """The model to use for `task`: the requested one if it is offered and fits in memory,
+    else the first option that fits and is installed, else the first that fits."""
+    machine = _TIER_ORDER[memory_tier(mem_gb)]
+    options = [o for o in TASKS[task] if machine >= _TIER_ORDER[_option_tier(o)]]
+    ids = [o["model"] for o in options]
+    if requested in ids:
+        return requested
+    for mid in ids:
+        if installed(mid):
+            return mid
+    return ids[0] if ids else TASKS[task][0]["model"]
+
+
+def _option_tier(option: dict) -> str:
+    return option.get("minTier") or "16"
+
+
+def tasks_status(mem_gb: float) -> dict:
+    machine = _TIER_ORDER[memory_tier(mem_gb)]
+    return {
+        task: [
+            {"model": o["model"], "strength": tr(o["strength"]), "speed": tr(o["speed"]),
+             "recommended": i == 0, "minTier": _option_tier(o),
+             "supported": machine >= _TIER_ORDER[_option_tier(o)], "installed": installed(o["model"])}
+            for i, o in enumerate(options)
+        ]
+        for task, options in TASKS.items()
+    }
+
 
 def _by_id():
     return {m["id"]: m for m in MODELS}
