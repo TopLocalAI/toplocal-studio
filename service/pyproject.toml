@@ -6,6 +6,7 @@ requires-python = ">=3.12"
 dependencies = [
     "aiohttp>=3.10",
     "cn2an>=0.5.24",
+    "opencc>=1.1.9",
     "pillow>=12.3.0",
 ]
 

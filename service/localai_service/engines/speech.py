@@ -7,6 +7,7 @@ Synthesize: preset voices use Kokoro (fast, Chinese). Text with Latin words (Kok
 unknown ones) and cloned voices go through Qwen3-TTS, whose reference for a preset is a
 Kokoro rendering of that preset, so the voice stays the same.
 """
+import functools
 import json
 import re
 import wave
@@ -43,6 +44,13 @@ async def to_wav16k(job: Job, src: Path, dest: Path) -> float:
                    "-c:a", "pcm_s16le", dest], log_name="ffmpeg.log")
     with wave.open(str(dest)) as w:
         return w.getnframes() / SR
+
+
+@functools.cache
+def _t2s():
+    import opencc
+
+    return opencc.OpenCC("t2s")
 
 
 def _fmt_srt(t: float) -> str:
@@ -131,8 +139,11 @@ async def transcribe(job: Job) -> dict:
 
     limit = 24 if re.search(r"[一-鿿]", "".join(texts.values())) else 60
     srt, plain, n = [], [], 0
+    # Qwen3-ASR sometimes writes Mandarin in Traditional characters; the app is for
+    # Simplified-Chinese users, so convert unless Cantonese was chosen explicitly.
+    to_simplified = _t2s().convert if p.get("language") != "yue" else (lambda t: t)
     for c in chunks:
-        text = texts.get(f"{c['index']:05d}", "").strip()
+        text = to_simplified(texts.get(f"{c['index']:05d}", "").strip())
         if not text:
             continue
         plain.append(re.sub(r"<\|[^|]*\|>", "", text))
