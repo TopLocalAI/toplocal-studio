@@ -77,4 +77,18 @@ export default {
   "用本地写作助手把想法扩写成更完整的描述": "Let the local writing assistant expand your idea into a fuller description",
   "需要先下载写作助手": "Download the writing assistant first",
   "高清 720p（慢约 3 倍）": "HD 720p (about 3× slower)",
+
+  // First-run dialog
+  "欢迎使用 TopLocal Studio": "Welcome to TopLocal Studio",
+  "所有内容都在这台电脑上生成。先选好要用的功能，我们帮你下载对应的模型，之后随时可以在设置里增删。": "Everything is generated on this computer. Pick the features you want and we'll download their models. You can add or remove models in Settings any time.",
+  "文字生成图片，中英文字准确": "Text to image with accurate lettering",
+  "一句话写歌，含写词助手": "Songs from one sentence, with the lyric writer",
+  "录音转文字和配音": "Transcription and voiceovers",
+  "带声音的短视频，文件较大": "Short videos with sound (large download)",
+  "需要 24 GB 以上内存": "Needs 24 GB+ memory",
+  "已安装": "Installed",
+  "共需下载 {size}，这台电脑剩余 {free} GB": "Download size {size}; {free} GB free on this computer",
+  "视频模型需要先在设置里填写 Hugging Face 令牌，可以之后再下载。": "The video model needs a Hugging Face token in Settings first. You can download it later.",
+  "稍后再说": "Later",
+  "下载所选模型": "Download selected",
 };

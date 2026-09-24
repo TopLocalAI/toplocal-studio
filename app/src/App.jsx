@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "./api";
 import { useLanguage } from "./i18n";
+import { FirstRunDialog } from "./components/FirstRunDialog";
 import { Rail } from "./components/Rail";
 import { LibraryPage } from "./pages/LibraryPage";
 import { ImagePage } from "./pages/ImagePage";
@@ -140,6 +141,7 @@ export function App() {
           <SettingsPage system={system} theme={theme} onThemeChange={setTheme} language={language} serviceLanguage={serviceLanguage} onLanguageChange={setLanguage} onRefresh={refreshSystem} focus={settingsFocus} />
         )}
       </div>
+      <FirstRunDialog system={system} serviceReady={service === "ready"} onInstalled={refreshSystem} />
     </div>
   );
 }

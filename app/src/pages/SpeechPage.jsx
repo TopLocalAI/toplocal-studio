@@ -135,22 +135,20 @@ export function SpeechPage({ active = true, features, serviceReady , onModelsCha
               <SourcePicker kind="audio" value={source} onChange={setSource} label={t("上传录音或视频")} />
               <small className="field-hint">{t("支持 mp3、m4a、wav、mp4、mov 等，长度不限")}</small>
             </div>
-            <div className="field-row">
-              <div className="field-group">
-                <label htmlFor="asr-lang" className="field-label">{t("语言")}</label>
-                <div className="select-wrap">
-                  <TextAa size={17} />
-                  <select id="asr-lang" value={language} onChange={(e) => setLanguage(e.target.value)}>
-                    {LANGUAGES.map((l) => (
-                      <option key={l.id} value={l.id}>{t(l.name)}</option>
-                    ))}
-                  </select>
-                </div>
+            <div className="field-group">
+              <label htmlFor="asr-lang" className="field-label">{t("语言")}</label>
+              <div className="select-wrap">
+                <TextAa size={17} />
+                <select id="asr-lang" value={language} onChange={(e) => setLanguage(e.target.value)}>
+                  {LANGUAGES.map((l) => (
+                    <option key={l.id} value={l.id}>{t(l.name)}</option>
+                  ))}
+                </select>
               </div>
-              <div className="field-group">
-                <span className="field-label">{t("模型")}</span>
-                <ModelPicker compact options={tasks["speech.transcribe"]} value={asrModel} onChange={setAsrModel} models={models} />
-              </div>
+            </div>
+            <div className="field-group">
+              <span className="field-label">{t("模型")}</span>
+              <ModelPicker options={tasks["speech.transcribe"]} value={asrModel} onChange={setAsrModel} models={models} />
             </div>
           </>
         ) : (
