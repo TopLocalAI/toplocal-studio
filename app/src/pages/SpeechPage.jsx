@@ -5,6 +5,7 @@ import { JobOverlay } from "../components/JobOverlay";
 import { SourcePicker } from "../components/SourcePicker";
 import { ModelGate } from "../components/ModelGate";
 import { ModelPicker } from "../components/ModelPicker";
+import { PromptBox } from "../components/PromptBox";
 import { Welcome } from "../components/Welcome";
 import { ASR_EXAMPLES, TTS_EXAMPLES } from "../examples";
 import { useModels } from "../hooks/useModels";
@@ -116,17 +117,13 @@ export function SpeechPage({ active = true, features, serviceReady , onModelsCha
   return (
     <div className="studio">
       <aside className="composer-panel" aria-label={t("语音")}>
-        <div className="composer-heading">
-          <Sparkle size={24} weight="fill" />
-          <h1>{t("声音和文字")}</h1>
-        </div>
         <div className="mode-switch mode-switch-2" role="tablist">
           <button type="button" role="tab" aria-selected={mode === "transcribe"} className={mode === "transcribe" ? "mode-item is-active" : "mode-item"} onClick={() => setMode("transcribe")}>
-            <Subtitles size={20} />
+            <Subtitles size={17} />
             <span>{t("转文字")}</span>
           </button>
           <button type="button" role="tab" aria-selected={mode === "synthesize"} className={mode === "synthesize" ? "mode-item is-active" : "mode-item"} onClick={() => setMode("synthesize")}>
-            <Microphone size={20} />
+            <Microphone size={17} />
             <span>{t("配音")}</span>
           </button>
         </div>
@@ -138,27 +135,34 @@ export function SpeechPage({ active = true, features, serviceReady , onModelsCha
               <SourcePicker kind="audio" value={source} onChange={setSource} label={t("上传录音或视频")} />
               <small className="field-hint">{t("支持 mp3、m4a、wav、mp4、mov 等，长度不限")}</small>
             </div>
-            <div className="field-group duration-group">
-              <label htmlFor="asr-lang" className="field-label">{t("语言")}</label>
-              <div className="select-wrap">
-                <TextAa size={19} />
-                <select id="asr-lang" value={language} onChange={(e) => setLanguage(e.target.value)}>
-                  {LANGUAGES.map((l) => (
-                    <option key={l.id} value={l.id}>{t(l.name)}</option>
-                  ))}
-                </select>
+            <div className="field-row">
+              <div className="field-group">
+                <label htmlFor="asr-lang" className="field-label">{t("语言")}</label>
+                <div className="select-wrap">
+                  <TextAa size={17} />
+                  <select id="asr-lang" value={language} onChange={(e) => setLanguage(e.target.value)}>
+                    {LANGUAGES.map((l) => (
+                      <option key={l.id} value={l.id}>{t(l.name)}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="field-group">
+                <span className="field-label">{t("模型")}</span>
+                <ModelPicker compact options={tasks["speech.transcribe"]} value={asrModel} onChange={setAsrModel} models={models} />
               </div>
             </div>
           </>
         ) : (
           <>
-            <div className="field-group prompt-group">
-              <div className="field-label-row">
-                <label htmlFor="tts-text">{t("要朗读的文字")}</label>
-                <span>{text.length} / 5000</span>
-              </div>
-              <textarea id="tts-text" className="prompt-input" maxLength={5000} value={text} placeholder={t("输入或粘贴一段文字，中英文混排也可以")} onChange={(e) => setText(e.target.value)} />
-            </div>
+            <PromptBox
+              id="tts-text"
+              label={t("要朗读的文字")}
+              value={text}
+              onChange={setText}
+              maxLength={5000}
+              placeholder={t("输入或粘贴一段文字，中英文混排也可以")}
+            />
             <div className="field-group">
               <span className="field-label">{t("音色")}</span>
               <div className="voice-grid">
@@ -179,32 +183,29 @@ export function SpeechPage({ active = true, features, serviceReady , onModelsCha
                 <small className="field-hint">{t("只用于本次配音，全程在本机处理")}</small>
               </div>
             ) : null}
+            <div className="field-group">
+              <span className="field-label">{t("模型")}</span>
+              <ModelPicker options={tasks["speech.synthesize"]} value={ttsModel} onChange={setTtsModel} models={models} />
+            </div>
           </>
         )}
 
-        <div className="field-group">
-          <span className="field-label">{t("模型")}</span>
-          {mode === "transcribe" ? (
-            <ModelPicker options={tasks["speech.transcribe"]} value={asrModel} onChange={setAsrModel} models={models} />
-          ) : (
-            <ModelPicker options={tasks["speech.synthesize"]} value={ttsModel} onChange={setTtsModel} models={models} />
-          )}
-        </div>
-
-        <button type="button" className="generate-button" disabled={!canRun} onClick={run}>
-          <Sparkle size={21} weight="fill" />
-          <span>{job.running ? t("处理中…") : mode === "transcribe" ? t("开始转文字") : t("生成配音")}</span>
-        </button>
-        <p className="generate-note">
-          {!serviceReady ? t("正在连接本地引擎") : mode === "transcribe" ? t("1 小时录音约 2–5 分钟，全部在本机完成") : t("几秒到几十秒，全部在本机完成")}
-        </p>
-        {error ? <p className="form-error" role="alert">{error}</p> : null}
         {serviceReady ? (
           <ModelGate
             modelIds={mode === "transcribe" ? [asrModel?.model] : [ttsModel?.model, voice === "clone" ? "speech.tts" : null]}
             onInstalled={onModelsChanged}
           />
         ) : null}
+        <div className="composer-footer">
+          <button type="button" className="generate-button" disabled={!canRun} onClick={run}>
+            <Sparkle size={20} weight="fill" />
+            <span>{job.running ? t("处理中…") : mode === "transcribe" ? t("开始转文字") : t("生成配音")}</span>
+          </button>
+          <p className="generate-note">
+            {!serviceReady ? t("正在连接本地引擎") : mode === "transcribe" ? t("1 小时录音约 2–5 分钟，全部在本机完成") : t("几秒到几十秒，全部在本机完成")}
+          </p>
+          {error ? <p className="form-error" role="alert">{error}</p> : null}
+        </div>
       </aside>
 
       <main className="studio-stage">

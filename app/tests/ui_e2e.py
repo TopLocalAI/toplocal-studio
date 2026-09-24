@@ -132,7 +132,7 @@ def image_to_video(page):
 @step("视频-图片生成 3 秒")
 def video_generate(page):
     here(page, "#video-text").fill("晨光慢慢移动，纸鹤轻轻晃动")
-    page.get_by_role("radio", name="3 秒").click()
+    here(page, "#video-seconds").select_option("3")
     page.get_by_role("button", name="生成视频").click()
     wait_job(page)
     expect(here(page, "video.result-video")).to_be_visible()
@@ -232,8 +232,8 @@ def video_text(page):
     nav(page, "视频")
     page.get_by_role("tab", name="文字生成").click()
     here(page, "#video-text").fill("海浪拍打礁石，夕阳下的海鸥飞过")
-    page.get_by_role("radio", name="5 秒").click()
-    page.get_by_role("radio", name=re.compile("480p")).click()
+    here(page, "#video-seconds").select_option("5")
+    here(page, "#video-resolution").select_option("480p")
     page.get_by_role("button", name="生成视频").click()
     wait_job(page)
     expect(here(page, "video.result-video")).to_be_visible()
@@ -242,12 +242,12 @@ def video_text(page):
 @step("视频-文字生成 3 秒 720p")
 def video_720(page):
     here(page, "#video-text").fill("城市街道的雨夜，霓虹灯倒映在积水里")
-    page.get_by_role("radio", name="3 秒").click()
-    page.get_by_role("radio", name=re.compile("720p")).click()
+    here(page, "#video-seconds").select_option("3")
+    here(page, "#video-resolution").select_option("720p")
     page.get_by_role("button", name="生成视频").click()
     wait_job(page, VERY_LONG)
     expect(here(page, "video.result-video")).to_be_visible()
-    page.get_by_role("radio", name=re.compile("480p")).click()
+    here(page, "#video-resolution").select_option("480p")
 
 
 @step("语音-中英混排配音")

@@ -68,4 +68,13 @@ export default {
   "英文录音": "English recording",
   "一段英文介绍，自动识别语言并生成字幕": "An English introduction: the language is detected automatically",
   "一段 15 秒的普通话介绍，看看转写效果和字幕": "A 15-second Mandarin introduction: see the transcript and subtitles",
+
+  // Prompt card
+  "帮我润色": "Polish",
+  "润色中…": "Polishing…",
+  "撤销": "Undo",
+  "润色失败，请重试": "Polishing failed. Please try again.",
+  "用本地写作助手把想法扩写成更完整的描述": "Let the local writing assistant expand your idea into a fuller description",
+  "需要先下载写作助手": "Download the writing assistant first",
+  "高清 720p（慢约 3 倍）": "HD 720p (about 3× slower)",
 };

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { DownloadSimple, FilmSlate, ImageSquare, Lock, Sparkle, TextT } from "@phosphor-icons/react";
+import { DownloadSimple, ImageSquare, Lock, MonitorPlay, Sparkle, TextT, Timer } from "@phosphor-icons/react";
 import { api, fileUrl, saveResult } from "../api";
 import { JobOverlay } from "../components/JobOverlay";
 import { SourcePicker } from "../components/SourcePicker";
 import { ModelGate } from "../components/ModelGate";
 import { ModelPicker } from "../components/ModelPicker";
+import { PromptBox } from "../components/PromptBox";
 import { Welcome } from "../components/Welcome";
 import { VIDEO_EXAMPLES } from "../examples";
 import { useModels } from "../hooks/useModels";
@@ -46,6 +47,7 @@ export function VideoPage({ active = true, features, serviceReady, system, initi
   const { models, tasks } = useModels(onModelsChanged);
   const [model, setModel] = useTaskModel("video.generate", tasks["video.generate"]);
   const ready = Boolean(model?.installed);
+  const writerReady = Boolean(models.find((m) => m.id === "llm.writer")?.installed);
 
   const loadRecent = useCallback(async () => {
     try {
@@ -116,17 +118,13 @@ export function VideoPage({ active = true, features, serviceReady, system, initi
   return (
     <div className="studio">
       <aside className="composer-panel" aria-label={t("视频创作")}>
-        <div className="composer-heading">
-          <Sparkle size={24} weight="fill" />
-          <h1>{t("让画面动起来")}</h1>
-        </div>
         <div className="mode-switch mode-switch-2" role="tablist">
           <button type="button" role="tab" aria-selected={mode === "text"} className={mode === "text" ? "mode-item is-active" : "mode-item"} onClick={() => setMode("text")}>
-            <TextT size={20} />
+            <TextT size={17} />
             <span>{t("文字生成")}</span>
           </button>
           <button type="button" role="tab" aria-selected={mode === "image"} className={mode === "image" ? "mode-item is-active" : "mode-item"} onClick={() => setMode("image")}>
-            <ImageSquare size={20} />
+            <ImageSquare size={17} />
             <span>{t("图片生成")}</span>
           </button>
         </div>
@@ -138,46 +136,42 @@ export function VideoPage({ active = true, features, serviceReady, system, initi
           </div>
         ) : null}
 
-        <div className="field-group prompt-group">
-          <div className="field-label-row">
-            <label htmlFor="video-text">{mode === "image" ? t("想让它怎么动") : t("描述画面和动作")}</label>
-            <span>{text.length} / 500</span>
-          </div>
-          <textarea
-            id="video-text"
-            className={mode === "image" ? "prompt-input prompt-short" : "prompt-input"}
-            maxLength={500}
-            value={text}
-            placeholder={mode === "image" ? t("例如：云雾缓缓流动，镜头慢慢推近") : t("例如：一只橘猫在窗台上伸懒腰，窗外下着小雨")}
-            onChange={(e) => setText(e.target.value)}
-          />
-          <label className="check-row">
-            <input type="checkbox" checked={enhance} onChange={(e) => setEnhance(e.target.checked)} />
-            {t("自动补充镜头和细节描述（推荐）")}
-          </label>
-        </div>
+        <PromptBox
+          id="video-text"
+          label={mode === "image" ? t("想让它怎么动") : t("描述画面和动作")}
+          value={text}
+          onChange={setText}
+          maxLength={500}
+          placeholder={mode === "image" ? t("例如：云雾缓缓流动，镜头慢慢推近") : t("例如：一只橘猫在窗台上伸懒腰，窗外下着小雨")}
+          polish={{ ready: writerReady, params: { target: "video", fromImage: mode === "image" } }}
+          onError={setError}
+        />
+        <label className="check-row">
+          <input type="checkbox" checked={enhance} onChange={(e) => setEnhance(e.target.checked)} />
+          {t("自动补充镜头和细节描述（推荐）")}
+        </label>
 
-        <div className="field-group">
-          <span className="field-label">{t("时长")}</span>
-          <div className="segmented segmented-3" role="radiogroup">
-            {SECONDS.map((s) => (
-              <button key={s} type="button" role="radio" aria-checked={seconds === s} className={seconds === s ? "is-active" : ""} onClick={() => setSeconds(s)}>
-                <strong>{t("{s} 秒", { s })}</strong>
-              </button>
-            ))}
+        <div className="field-row">
+          <div className="field-group">
+            <label htmlFor="video-seconds" className="field-label">{t("时长")}</label>
+            <div className="select-wrap">
+              <Timer size={17} />
+              <select id="video-seconds" value={seconds} onChange={(e) => setSeconds(Number(e.target.value))}>
+                {SECONDS.map((s) => (
+                  <option key={s} value={s}>{t("{s} 秒", { s })}</option>
+                ))}
+              </select>
+            </div>
           </div>
-        </div>
-        <div className="field-group">
-          <span className="field-label">{t("清晰度")}</span>
-          <div className="segmented" role="radiogroup">
-            <button type="button" role="radio" aria-checked={resolution === "480p"} className={resolution === "480p" ? "is-active" : ""} onClick={() => setResolution("480p")}>
-              <strong>{t("标清 480p")}</strong>
-              <small>{t("快，适合预览")}</small>
-            </button>
-            <button type="button" role="radio" aria-checked={resolution === "720p"} className={resolution === "720p" ? "is-active" : ""} onClick={() => setResolution("720p")}>
-              <strong>{t("高清 720p")}</strong>
-              <small>{t("慢约 3 倍")}</small>
-            </button>
+          <div className="field-group">
+            <label htmlFor="video-resolution" className="field-label">{t("清晰度")}</label>
+            <div className="select-wrap">
+              <MonitorPlay size={17} />
+              <select id="video-resolution" value={resolution} onChange={(e) => setResolution(e.target.value)}>
+                <option value="480p">{t("标清 480p")}</option>
+                <option value="720p">{t("高清 720p（慢约 3 倍）")}</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -186,19 +180,21 @@ export function VideoPage({ active = true, features, serviceReady, system, initi
           <ModelPicker options={tasks["video.generate"]} value={model} onChange={setModel} models={models} />
         </div>
 
-        <button type="button" className="generate-button" disabled={!canRun} onClick={run}>
-          <Sparkle size={21} weight="fill" />
-          <span>{job.running ? t("正在生成…") : t("生成视频")}</span>
-        </button>
-        <p className="generate-note">
-          {!serviceReady
-            ? t("正在连接本地引擎")
-            : !ready
-              ? t("先下载所选模型")
-              : t("预计{estimate}，带声音，全部在本机完成", { estimate: estimate(seconds, resolution, mode === "image") })}
-        </p>
-        {error ? <p className="form-error" role="alert">{error}</p> : null}
         {serviceReady ? <ModelGate modelIds={[model?.model]} onInstalled={onModelsChanged} /> : null}
+        <div className="composer-footer">
+          <button type="button" className="generate-button" disabled={!canRun} onClick={run}>
+            <Sparkle size={20} weight="fill" />
+            <span>{job.running ? t("正在生成…") : t("生成视频")}</span>
+          </button>
+          <p className="generate-note">
+            {!serviceReady
+              ? t("正在连接本地引擎")
+              : !ready
+                ? t("先下载所选模型")
+                : t("预计{estimate}，带声音，全部在本机完成", { estimate: estimate(seconds, resolution, mode === "image") })}
+          </p>
+          {error ? <p className="form-error" role="alert">{error}</p> : null}
+        </div>
       </aside>
 
       <main className="studio-stage">

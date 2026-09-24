@@ -205,6 +205,8 @@ def library(module: str | None = None) -> list[dict]:
             data = json.loads(meta.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             continue
+        if data.get("module") == "shared":  # helper jobs (prompt polishing) are not works
+            continue
         if data.get("status") == "done" and (module is None or data.get("module") == module):
             items.append(data)
     return sorted(items, key=lambda d: d.get("created", 0), reverse=True)

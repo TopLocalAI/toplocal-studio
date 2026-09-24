@@ -5,6 +5,7 @@ import { SourcePicker } from "../components/SourcePicker";
 import { JobOverlay } from "../components/JobOverlay";
 import { ModelGate } from "../components/ModelGate";
 import { ModelPicker } from "../components/ModelPicker";
+import { PromptBox } from "../components/PromptBox";
 import { Welcome } from "../components/Welcome";
 import { IMAGE_EXAMPLES } from "../examples";
 import { useModels } from "../hooks/useModels";
@@ -33,6 +34,7 @@ export function ImagePage({ active = true, features, serviceReady, onAnimate , o
   const [editModel, setEditModel] = useTaskModel("image.edit", tasks["image.edit"]);
   const selected = mode === "generate" ? genModel : editModel;
   const createReady = Boolean(genModel?.installed);
+  const writerReady = Boolean(models.find((m) => m.id === "llm.writer")?.installed);
   const editReady = Boolean(editModel?.installed);
 
   const loadRecent = useCallback(async () => {
@@ -96,39 +98,30 @@ export function ImagePage({ active = true, features, serviceReady, onAnimate , o
   return (
     <div className="studio">
       <aside className="composer-panel" aria-label={t("图片创作")}>
-        <div className="composer-heading">
-          <Sparkle size={24} weight="fill" />
-          <h1>{t("画一张图")}</h1>
-        </div>
-
         <div className="mode-switch mode-switch-2" role="tablist">
           <button type="button" role="tab" aria-selected={mode === "generate"} className={mode === "generate" ? "mode-item is-active" : "mode-item"} onClick={() => setMode("generate")}>
-            <MagicWand size={20} />
+            <MagicWand size={17} />
             <span>{t("生成")}</span>
           </button>
           <button type="button" role="tab" aria-selected={mode === "edit"} className={mode === "edit" ? "mode-item is-active" : "mode-item"} onClick={() => setMode("edit")}>
-            <PencilSimple size={20} />
+            <PencilSimple size={17} />
             <span>{t("编辑")}</span>
           </button>
         </div>
 
         {mode === "generate" ? (
           <>
-            <div className="field-group prompt-group">
-              <div className="field-label-row">
-                <label htmlFor="img-text">{t("描述画面")}</label>
-                <span>{text.length} / 500</span>
-              </div>
-              <textarea
-                id="img-text"
-                className="prompt-input"
-                maxLength={500}
-                value={text}
-                placeholder={t("例如：一张咖啡馆菜单海报，标题写着“秋日限定”，下方是南瓜拿铁的插画")}
-                onChange={(e) => setText(e.target.value)}
-              />
-              <small className="field-hint">{t("想让图里出现文字，就用引号写出来")}</small>
-            </div>
+            <PromptBox
+              id="img-text"
+              label={t("描述画面")}
+              value={text}
+              onChange={setText}
+              maxLength={500}
+              placeholder={t("例如：一张咖啡馆菜单海报，标题写着“秋日限定”，下方是南瓜拿铁的插画")}
+              hint={t("想让图里出现文字，就用引号写出来")}
+              polish={{ ready: writerReady, params: { target: "image" } }}
+              onError={setError}
+            />
             <div className="field-group">
               <span className="field-label">{t("风格")}</span>
               <div className="style-chips">
@@ -139,18 +132,21 @@ export function ImagePage({ active = true, features, serviceReady, onAnimate , o
                 ))}
               </div>
             </div>
-            <div className="field-group">
-              <span className="field-label">{t("画面比例")}</span>
-              <div className="aspect-row">
-                {ASPECTS.map((a) => {
-                  const [w, h] = a.split(":").map(Number);
-                  return (
-                    <button key={a} type="button" className={aspect === a ? "aspect is-active" : "aspect"} onClick={() => setAspect(a)} title={a}>
-                      <i style={{ aspectRatio: `${w} / ${h}` }} />
-                      <span>{a}</span>
-                    </button>
-                  );
-                })}
+            <div className="field-row">
+              <div className="field-group">
+                <label htmlFor="img-aspect" className="field-label">{t("画面比例")}</label>
+                <div className="select-wrap">
+                  <i className="aspect-glyph" style={{ aspectRatio: aspect.replace(":", " / ") }} />
+                  <select id="img-aspect" value={aspect} onChange={(e) => setAspect(e.target.value)}>
+                    {ASPECTS.map((a) => (
+                      <option key={a} value={a}>{a}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="field-group">
+                <span className="field-label">{t("模型")}</span>
+                <ModelPicker compact options={tasks["image.generate"]} value={genModel} onChange={setGenModel} models={models} />
               </div>
             </div>
           </>
@@ -160,41 +156,32 @@ export function ImagePage({ active = true, features, serviceReady, onAnimate , o
               <span className="field-label">{t("要修改的图片")}</span>
               <SourcePicker value={source} onChange={setSource} label={t("上传一张图片")} />
             </div>
-            <div className="field-group prompt-group">
-              <div className="field-label-row">
-                <label htmlFor="img-edit">{t("想怎么改")}</label>
-              </div>
-              <textarea
-                id="img-edit"
-                className="prompt-input prompt-short"
-                maxLength={300}
-                value={editText}
-                placeholder={t("例如：把招牌上的字改成“TopLocal Studio”，换成下雪的冬夜")}
-                onChange={(e) => setEditText(e.target.value)}
-              />
+            <PromptBox
+              id="img-edit"
+              label={t("想怎么改")}
+              value={editText}
+              onChange={setEditText}
+              maxLength={300}
+              placeholder={t("例如：把招牌上的字改成“TopLocal Studio”，换成下雪的冬夜")}
+            />
+            <div className="field-group">
+              <span className="field-label">{t("模型")}</span>
+              <ModelPicker options={tasks["image.edit"]} value={editModel} onChange={setEditModel} models={models} />
             </div>
           </>
         )}
 
-        <div className="field-group">
-          <span className="field-label">{t("模型")}</span>
-          <ModelPicker
-            options={tasks[mode === "generate" ? "image.generate" : "image.edit"]}
-            value={selected}
-            onChange={mode === "generate" ? setGenModel : setEditModel}
-            models={models}
-          />
-        </div>
-
-        <button type="button" className="generate-button" disabled={!canRun} onClick={() => run()}>
-          <Sparkle size={21} weight="fill" />
-          <span>{job.running ? t("正在生成…") : mode === "generate" ? t("生成图片") : t("开始修改")}</span>
-        </button>
-        <p className="generate-note">
-          {!serviceReady ? t("正在连接本地引擎") : !selected?.installed ? t("先下载所选模型") : t("预计{estimate}，全部在本机完成", { estimate })}
-        </p>
-        {error ? <p className="form-error" role="alert">{error}</p> : null}
         {serviceReady ? <ModelGate modelIds={[selected?.model]} onInstalled={onModelsChanged} /> : null}
+        <div className="composer-footer">
+          <button type="button" className="generate-button" disabled={!canRun} onClick={() => run()}>
+            <Sparkle size={20} weight="fill" />
+            <span>{job.running ? t("正在生成…") : mode === "generate" ? t("生成图片") : t("开始修改")}</span>
+          </button>
+          <p className="generate-note">
+            {!serviceReady ? t("正在连接本地引擎") : !selected?.installed ? t("先下载所选模型") : t("预计{estimate}，全部在本机完成", { estimate })}
+          </p>
+          {error ? <p className="form-error" role="alert">{error}</p> : null}
+        </div>
       </aside>
 
       <main className="studio-stage">

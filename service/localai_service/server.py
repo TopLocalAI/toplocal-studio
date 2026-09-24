@@ -12,7 +12,7 @@ from aiohttp import web
 
 from . import __version__, catalog, config, downloads, jobs, procs, settings, system, uploads
 from .i18n import tr
-from .engines import image, music, speech, video
+from .engines import image, llm, music, speech, video
 
 MANAGER: jobs.JobManager | None = None
 DOWNLOADS = downloads.DownloadManager()
@@ -294,6 +294,7 @@ def create_app() -> web.Application:
     MANAGER.register("speech", "transcribe", speech.transcribe)
     MANAGER.register("speech", "synthesize", speech.synthesize)
     MANAGER.register("video", "generate", video.generate)
+    MANAGER.register("shared", "enhance", llm.enhance)
 
     app = web.Application(middlewares=[security], client_max_size=uploads.MAX_BYTES)
     app.router.add_get("/api/health", health)

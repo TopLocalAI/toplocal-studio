@@ -84,3 +84,36 @@ async def video_prompt(job: Job, idea: str, from_image: bool, image_desc: str = 
     text = await complete(job, VIDEO_SYSTEM, hint + idea, max_tokens=260, temperature=0.6)
     text = " ".join(text.split())
     return text if len(text) > 40 else idea
+
+
+IMAGE_SYSTEM = (
+    "你是文生图提示词助手。把用户的一句话扩写成一段适合图像模型的画面描述，"
+    "包含主体、环境、光线、构图、色调和风格，60 到 120 字。"
+    "用户写在引号里的文字必须原样保留在引号里。使用和用户相同的语言。只输出描述本身，不要解释。"
+)
+MUSIC_SYSTEM = (
+    "你是音乐制作助手。把用户对歌曲的简单描述扩写得更具体：情绪、节奏、乐器、人声和段落起伏，"
+    "40 到 80 字。使用和用户相同的语言。只输出描述本身，不要写歌词，不要解释。"
+)
+
+
+async def enhance(job: Job) -> dict:
+    """"Polish" button: expand a short idea into a fuller prompt for the chosen module."""
+    p = job.params
+    text = str(p.get("text", "")).strip()[:500]
+    if not text:
+        raise JobFailed(tr("先写一句想法，再让写作助手润色"))
+    target = p.get("target")
+    job.update(10, tr("正在润色"))
+    if target == "video":
+        out = await video_prompt(job, text, bool(p.get("fromImage")))
+    else:
+        system = MUSIC_SYSTEM if target == "music" else IMAGE_SYSTEM
+        out = await complete(job, system, text, max_tokens=300, temperature=0.7)
+    out = out.strip().strip("“”\"").strip()
+    # The model sometimes repeats the user's line after its answer.
+    if out.endswith(text) and len(out) > len(text) + 10:
+        out = out[: -len(text)].rstrip()
+    if not out:
+        raise JobFailed(tr("润色失败，请重试"))
+    return {"text": out}

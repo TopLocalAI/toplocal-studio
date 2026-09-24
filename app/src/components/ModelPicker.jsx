@@ -7,7 +7,7 @@ import { formatBytes } from "../hooks/useModels";
 // Choose which model runs a task. Every option says what it is good at; models that are
 // not installed can still be picked (the download prompt below the button then shows them),
 // models this computer cannot run are listed but disabled.
-export function ModelPicker({ options, value, onChange, models }) {
+export function ModelPicker({ options, value, onChange, models, compact = false }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const byId = Object.fromEntries(models.map((m) => [m.id, m]));
@@ -28,13 +28,15 @@ export function ModelPicker({ options, value, onChange, models }) {
 
   if (!options?.length || !value) return null;
   const name = (id) => byId[id]?.name || id;
+  const label = (id) => (compact && byId[id]?.short) || name(id);
   const single = options.length === 1;
 
   return (
-    <div className="model-picker" ref={ref}>
+    <div className={compact ? "model-picker is-compact" : "model-picker"} ref={ref}>
       <button
         type="button"
         className="model-picker-button"
+        title={compact ? value.strength : undefined}
         aria-haspopup="listbox"
         aria-expanded={open}
         disabled={single}
@@ -42,10 +44,10 @@ export function ModelPicker({ options, value, onChange, models }) {
       >
         <span className="model-picker-main">
           <strong>
-            {name(value.model)}
-            {value.recommended ? <em className="model-badge">{t("推荐")}</em> : null}
+            {label(value.model)}
+            {value.recommended && !compact ? <em className="model-badge">{t("推荐")}</em> : null}
           </strong>
-          <small>{value.strength}</small>
+          {compact ? null : <small>{value.strength}</small>}
         </span>
         {single ? null : <CaretDown size={16} />}
       </button>

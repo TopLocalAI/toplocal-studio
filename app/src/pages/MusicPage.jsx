@@ -11,6 +11,7 @@ import {
 import { api, fileUrl, formatDuration, saveResult } from "../api";
 import { ModelGate } from "../components/ModelGate";
 import { ModelPicker } from "../components/ModelPicker";
+import { PromptBox } from "../components/PromptBox";
 import { Welcome } from "../components/Welcome";
 import { MUSIC_EXAMPLES } from "../examples";
 import { useModels } from "../hooks/useModels";
@@ -156,11 +157,6 @@ export function MusicPage({ active = true, features, serviceReady , onModelsChan
   return (
     <div className="studio music-page">
       <aside className="composer-panel" aria-label={t("歌曲创作")}>
-        <div className="composer-heading">
-          <Sparkle size={24} weight="fill" />
-          <h1>{t("写一首歌")}</h1>
-        </div>
-
         <div className="mode-switch" role="tablist" aria-label={t("创作方式")}>
           {MUSIC_MODES.map((m) => {
             const Icon = MODE_ICONS[m.id];
@@ -173,29 +169,24 @@ export function MusicPage({ active = true, features, serviceReady , onModelsChan
                 className={mode === m.id ? "mode-item is-active" : "mode-item"}
                 onClick={() => setMode(m.id)}
               >
-                <Icon size={20} />
+                <Icon size={17} />
                 <span>{t(m.label)}</span>
               </button>
             );
           })}
         </div>
 
-        <div className="field-group prompt-group">
-          <div className="field-label-row">
-            <label htmlFor="song-text">{t(modeInfo.inputLabel)}</label>
-            <span>
-              {text.length} / {modeInfo.maxLength}
-            </span>
-          </div>
-          <textarea
-            id="song-text"
-            value={text}
-            maxLength={modeInfo.maxLength}
-            placeholder={t(modeInfo.placeholder)}
-            className={mode === "lyrics" ? "prompt-input is-lyrics" : "prompt-input"}
-            onChange={(e) => setTexts((prev) => ({ ...prev, [mode]: e.target.value }))}
-          />
-        </div>
+        <PromptBox
+          id="song-text"
+          label={t(modeInfo.inputLabel)}
+          value={text}
+          onChange={(v) => setTexts((prev) => ({ ...prev, [mode]: v }))}
+          maxLength={modeInfo.maxLength}
+          placeholder={t(modeInfo.placeholder)}
+          tall={mode === "lyrics"}
+          polish={mode === "lyrics" ? null : { ready: writerReady, params: { target: "music" } }}
+          onError={setError}
+        />
 
         <div className="field-group">
           <span className="field-label">{t("风格（最多 4 个）")}</span>
@@ -214,40 +205,42 @@ export function MusicPage({ active = true, features, serviceReady , onModelsChan
           </div>
         </div>
 
-        <div className="field-group">
-          <span className="field-label">{t("模型")}</span>
-          <ModelPicker options={options} value={chosen} onChange={setModel} models={models} />
+        <div className={effectiveEngine === "standard" ? "field-row" : ""}>
+          <div className="field-group">
+            <span className="field-label">{t("模型")}</span>
+            <ModelPicker compact={effectiveEngine === "standard"} options={options} value={chosen} onChange={setModel} models={models} />
+          </div>
+          {effectiveEngine === "standard" ? (
+            <div className="field-group">
+              <label htmlFor="song-duration" className="field-label">{t("时长")}</label>
+              <div className="select-wrap">
+                <Timer size={17} />
+                <select id="song-duration" value={duration} onChange={(e) => setDuration(Number(e.target.value))}>
+                  {DURATIONS.map((d) => (
+                    <option key={d} value={d}>{t("{n} 分钟", { n: d / 60 })}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          ) : null}
         </div>
 
-        {effectiveEngine === "standard" ? (
-          <div className="field-group duration-group">
-            <label htmlFor="song-duration" className="field-label">{t("时长")}</label>
-            <div className="select-wrap">
-              <Timer size={19} />
-              <select id="song-duration" value={duration} onChange={(e) => setDuration(Number(e.target.value))}>
-                {DURATIONS.map((d) => (
-                  <option key={d} value={d}>{t("{n} 分钟", { n: d / 60 })}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        ) : null}
-
-        <button
-          type="button"
-          className="generate-button"
-          disabled={!serviceReady || generation.running || blocked || !text.trim()}
-          onClick={start}
-        >
-          <Sparkle size={21} weight="fill" />
-          <span>{generation.running ? t("正在生成…") : t("生成歌曲")}</span>
-        </button>
-        <p className="generate-note">
-          {blockedReason || t("预计约 {time}，全部在本机完成", { time: formatDuration(expected) })}
-        </p>
-        {error ? <p className="form-error" role="alert">{error}</p> : null}
         {serviceReady ? <ModelGate modelIds={[chosen?.model, mode === "prompt" ? "llm.writer" : null]} onInstalled={onModelsChanged} /> : null}
-
+        <div className="composer-footer">
+          <button
+            type="button"
+            className="generate-button"
+            disabled={!serviceReady || generation.running || blocked || !text.trim()}
+            onClick={start}
+          >
+            <Sparkle size={20} weight="fill" />
+            <span>{generation.running ? t("正在生成…") : t("生成歌曲")}</span>
+          </button>
+          <p className="generate-note">
+            {blockedReason || t("预计约 {time}，全部在本机完成", { time: formatDuration(expected) })}
+          </p>
+          {error ? <p className="form-error" role="alert">{error}</p> : null}
+        </div>
       </aside>
 
       <main className="studio-stage">

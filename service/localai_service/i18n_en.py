@@ -172,4 +172,8 @@ EN: dict[str, str] = {
     "1 小时录音约 1 分钟": "about 1 min per hour of audio",
     "几秒": "a few seconds",
     "十几秒": "10–20 s",
+    # Prompt polishing
+    "先写一句想法，再让写作助手润色": "Write an idea first, then let the writing assistant polish it.",
+    "正在润色": "Polishing",
+    "润色失败，请重试": "Polishing failed. Please try again.",
 }
