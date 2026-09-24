@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "./api";
 import { Rail } from "./components/Rail";
 import { LibraryPage } from "./pages/LibraryPage";
@@ -34,12 +34,17 @@ export function App() {
     }
   }, [theme]);
 
+  const failures = useRef(0);
   const refreshSystem = useCallback(async () => {
     try {
       setSystem(await api.system());
+      failures.current = 0;
       setService("ready");
     } catch {
-      setService("offline");
+      // The service needs a few seconds to start with the app: only report it as
+      // unreachable after ~10 s of failed attempts, or once it had been running.
+      failures.current += 1;
+      setService((s) => (s === "ready" || failures.current >= 5 ? "offline" : s));
     }
   }, []);
 
@@ -52,12 +57,22 @@ export function App() {
     return () => clearInterval(id);
   }, [refreshSystem, service]);
 
+  const [settingsFocus, setSettingsFocus] = useState(null);
+  const navigate = useCallback((id) => {
+    setSettingsFocus(null);
+    setPage(id);
+  }, []);
+  const showAbout = useCallback(() => {
+    setSettingsFocus({ section: "about", at: Date.now() });
+    setPage("settings");
+  }, []);
+
   const features = system?.features || [];
   const clearVideoSource = useCallback(() => setVideoSource(null), []);
 
   return (
     <div className="app-shell">
-      <Rail page={page} onNavigate={setPage} features={features} service={service} />
+      <Rail page={page} onNavigate={navigate} onAbout={showAbout} features={features} service={service} onRetry={refreshSystem} />
       <div className="app-main">
         {page === "music" && <MusicPage onModelsChanged={refreshSystem} features={features} serviceReady={service === "ready"} />}
         {page === "image" && (
@@ -82,7 +97,7 @@ export function App() {
         )}
         {page === "library" && <LibraryPage onOpenModule={setPage} />}
         {page === "settings" && (
-          <SettingsPage system={system} theme={theme} onThemeChange={setTheme} onRefresh={refreshSystem} />
+          <SettingsPage system={system} theme={theme} onThemeChange={setTheme} onRefresh={refreshSystem} focus={settingsFocus} />
         )}
       </div>
     </div>

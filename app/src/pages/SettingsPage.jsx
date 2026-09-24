@@ -1,13 +1,108 @@
-import { useEffect, useState } from "react";
-import { ArrowClockwise, CheckCircle, Moon, Sun } from "@phosphor-icons/react";
-import { api } from "../api";
-import { MODULES, TIER_LABEL } from "../data";
+import { useEffect, useRef, useState } from "react";
+import { ArrowClockwise, CheckCircle, GithubLogo, Key, Laptop, Moon, Sun } from "@phosphor-icons/react";
+import logo from "../assets/logo.svg";
+import { api, openExternal } from "../api";
+import { MODULES, TIER_NEED } from "../data";
 import { formatBytes, isDownloading, useModels } from "../hooks/useModels";
 
 const MODULE_LABEL = { ...Object.fromEntries(MODULES.map((m) => [m.id, m.label])), shared: "通用" };
+const REPO_URL = "https://github.com/TopLocalAI/toplocal-studio";
+const TOKEN_URL = "https://huggingface.co/settings/tokens";
 
-export function SettingsPage({ system, theme, onThemeChange, onRefresh }) {
-  const { models, download, cancel, remove } = useModels(onRefresh);
+// What one module can do on this machine: ready, needs a download, or needs more memory.
+function moduleStatus(moduleId, features, models) {
+  const list = features.filter((f) => f.module === moduleId);
+  const supported = list.filter((f) => f.supported);
+  if (!supported.length) {
+    const need = Math.min(...list.map((f) => Number(f.minTier)));
+    return { tone: "muted", text: `需要 ${TIER_NEED[need]} 以上内存` };
+  }
+  const missing = [...new Set(supported.filter((f) => !f.ready).flatMap((f) => f.models))]
+    .map((id) => models.find((m) => m.id === id))
+    .filter((m) => m && !m.installed);
+  const limited = list.filter((f) => !f.supported).map((f) => f.name.replace(/^.*·\s*/, ""));
+  if (missing.length) {
+    return { tone: "warn", text: `需下载模型 · ${formatBytes(missing.reduce((s, m) => s + m.sizeBytes, 0))}` };
+  }
+  return { tone: "ok", text: limited.length ? `可以使用（${limited.join("、")}需更大内存）` : "可以使用" };
+}
+
+function DeviceCard({ system, features, models }) {
+  const used = system.diskTotalGb ? 1 - system.diskFreeGb / system.diskTotalGb : 0;
+  const lowDisk = system.diskFreeGb < 40;
+  return (
+    <div className="device-card">
+      <div className="device-head">
+        <div className="device-icon"><Laptop size={26} /></div>
+        <div className="device-title">
+          <strong>{system.chip}</strong>
+          <span>
+            {system.os} {system.osVersion} · {system.memoryGb} GB 内存 ·{" "}
+            {system.backend === "metal" ? "Apple Metal 加速" : `${system.backend.toUpperCase()} 加速`}
+          </span>
+        </div>
+      </div>
+
+      <div className="device-meters">
+        <div className="meter">
+          <div className="meter-label">
+            <span>内存</span>
+            <strong>{system.memoryGb} GB</strong>
+          </div>
+          <div className="meter-steps" aria-hidden="true">
+            {[16, 24, 48].map((gb) => (
+              <i key={gb} className={system.memoryGb >= gb - 2 ? "is-on" : ""} />
+            ))}
+          </div>
+          <small>16 GB 可用音乐、语音、图片；24 GB 起解锁视频和精细修图</small>
+        </div>
+        <div className="meter">
+          <div className="meter-label">
+            <span>磁盘</span>
+            <strong>
+              剩余 {Math.round(system.diskFreeGb)} GB
+              {system.diskTotalGb ? <em> / 共 {Math.round(system.diskTotalGb)} GB</em> : null}
+            </strong>
+          </div>
+          <div className={lowDisk ? "meter-bar is-low" : "meter-bar"} aria-hidden="true">
+            <i style={{ width: `${Math.round(used * 100)}%` }} />
+          </div>
+          <small>{lowDisk ? "空间偏少：视频模型约需 31 GB" : "模型按需下载，全部模型约 65 GB"}</small>
+        </div>
+      </div>
+
+      <ul className="module-status">
+        {MODULES.map((m) => {
+          const status = moduleStatus(m.id, features, models);
+          const Icon = m.icon;
+          return (
+            <li key={m.id} className={`is-${status.tone}`}>
+              <Icon size={20} />
+              <strong>{m.label}</strong>
+              <span>
+                {status.tone === "ok" ? <CheckCircle size={14} weight="fill" /> : null}
+                {status.text}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+export function SettingsPage({ system, theme, onThemeChange, onRefresh, focus }) {
+  const { models, hasHfToken, refresh, download, cancel, remove } = useModels(onRefresh);
+  const aboutRef = useRef(null);
+  const tokenRef = useRef(null);
+  const [version, setVersion] = useState("");
+
+  useEffect(() => {
+    api.health().then((h) => setVersion(h.version)).catch(() => {});
+  }, []);
+  useEffect(() => {
+    if (focus?.section === "about") aboutRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [focus]);
   const [prefs, setPrefs] = useState(null);
   const [token, setToken] = useState("");
   const [confirming, setConfirming] = useState(null);
@@ -20,6 +115,7 @@ export function SettingsPage({ system, theme, onThemeChange, onRefresh }) {
   const savePrefs = async (values) => {
     try {
       setPrefs(await api.saveSettings(values));
+      refresh();
     } catch (e) {
       setError(e.message);
     }
@@ -48,22 +144,7 @@ export function SettingsPage({ system, theme, onThemeChange, onRefresh }) {
       <div className="settings-section">
         <h2>这台电脑</h2>
         {system ? (
-          <dl className="device-grid">
-            <dt>芯片</dt>
-            <dd>{system.chip}</dd>
-            <dt>内存</dt>
-            <dd>
-              {system.memoryGb} GB（{TIER_LABEL[system.tier]}）
-            </dd>
-            <dt>系统</dt>
-            <dd>
-              {system.os} {system.osVersion} · {system.arch}
-            </dd>
-            <dt>可用空间</dt>
-            <dd>{system.diskFreeGb} GB</dd>
-            <dt>加速</dt>
-            <dd>{system.backend === "metal" ? "Apple Metal" : system.backend.toUpperCase()}</dd>
-          </dl>
+          <DeviceCard system={system} features={system.features || []} models={models} />
         ) : (
           <p className="empty-note">正在连接本地引擎…</p>
         )}
@@ -96,8 +177,11 @@ export function SettingsPage({ system, theme, onThemeChange, onRefresh }) {
                 </button>
               </div>
             </label>
-            <label>
-              <span>Hugging Face 访问令牌（部分模型需要）</span>
+            <label ref={tokenRef}>
+              <span>
+                Hugging Face 访问令牌
+                {prefs.hasHfToken ? <em className="token-saved"> · 已保存</em> : null}
+              </span>
               <div className="token-row">
                 <input
                   type="password"
@@ -110,6 +194,13 @@ export function SettingsPage({ system, theme, onThemeChange, onRefresh }) {
                   保存
                 </button>
               </div>
+              <small className="token-help">
+                只有下表中标着 <span className="token-tag"><Key size={11} /> 需令牌</span> 的模型需要（
+                {models.filter((m) => m.needsToken).map((m) => m.name).join("、") || "当前没有"}），其他模型直接下载。
+                获取方法：登录 Hugging Face，打开模型页面同意许可证，再到{" "}
+                <button type="button" className="link-button" onClick={() => openExternal(TOKEN_URL)}>Access Tokens</button>{" "}
+                创建一个 Read 类型的令牌，粘贴到这里。
+              </small>
             </label>
           </div>
         ) : null}
@@ -131,7 +222,19 @@ export function SettingsPage({ system, theme, onThemeChange, onRefresh }) {
               return (
                 <tr key={m.id}>
                   <td>{MODULE_LABEL[m.module]}</td>
-                  <td>{m.name}</td>
+                  <td>
+                    {m.name}
+                    {m.needsToken ? (
+                      <button
+                        type="button"
+                        className="token-tag"
+                        title="需要 Hugging Face 令牌：点击打开模型页面同意许可证"
+                        onClick={() => openExternal(m.licensePage)}
+                      >
+                        <Key size={11} /> 需令牌
+                      </button>
+                    ) : null}
+                  </td>
                   <td>{formatBytes(m.sizeBytes)}</td>
                   <td className="license-cell">{m.license}</td>
                   <td className="model-status">
@@ -168,9 +271,15 @@ export function SettingsPage({ system, theme, onThemeChange, onRefresh }) {
                     ) : (
                       <>
                         {d?.state === "error" ? <small className="status-error" title={d.error}>下载失败</small> : null}
-                        <button type="button" className="link-button" onClick={() => act(() => download(m.id))}>
-                          {d?.doneBytes ? "继续下载" : "下载"}
-                        </button>
+                        {m.needsToken && !hasHfToken ? (
+                          <button type="button" className="link-button" onClick={() => tokenRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}>
+                            先填写令牌
+                          </button>
+                        ) : (
+                          <button type="button" className="link-button" onClick={() => act(() => download(m.id))}>
+                            {d?.doneBytes ? "继续下载" : "下载"}
+                          </button>
+                        )}
                       </>
                     )}
                   </td>
@@ -182,6 +291,21 @@ export function SettingsPage({ system, theme, onThemeChange, onRefresh }) {
         <p className="settings-note">
           已安装模型共 {formatBytes(installedBytes)}。所有生成都在本机完成，不上传任何内容。
         </p>
+      </div>
+
+      <div className="settings-section" ref={aboutRef}>
+        <h2>关于</h2>
+        <div className="about-card">
+          <img src={logo} alt="" width="56" height="56" />
+          <div>
+            <strong>TopLocal Studio · 本地创作台</strong>
+            <span>版本 {version || "—"} · Apache-2.0 开源 · 非商业项目</span>
+            <p>图片、视频、音乐、语音都在这台电脑上生成，不需要账号，也不上传任何内容。</p>
+          </div>
+          <button type="button" className="button button-secondary" onClick={() => openExternal(REPO_URL)}>
+            <GithubLogo size={17} /> 开源主页
+          </button>
+        </div>
       </div>
     </section>
   );

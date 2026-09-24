@@ -35,6 +35,7 @@ export const api = {
   cancel: (id) => request(`/api/jobs/${id}/cancel`, { method: "POST" }),
   library: (module) => request(`/api/library${module ? `?module=${module}` : ""}`),
   remove: (id) => request(`/api/library/${id}`, { method: "DELETE" }),
+  openUrl: (url) => request("/api/open", { method: "POST", body: JSON.stringify({ url }) }),
   save: (id, file, title) =>
     request(`/api/library/${id}/save`, { method: "POST", body: JSON.stringify({ file, title, reveal: true }) }),
 };
@@ -85,4 +86,12 @@ export function fileUrl(id, name, { download = false } = {}) {
 export function formatDuration(seconds) {
   const s = Math.max(0, Math.round(seconds || 0));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
+// Open a web page (license, project page) in the system browser. The desktop webview
+// cannot open new windows itself, so the local service does it.
+export function openExternal(url) {
+  if (IN_DESKTOP) return api.openUrl(url).catch(() => {});
+  window.open(url, "_blank", "noopener");
+  return Promise.resolve();
 }

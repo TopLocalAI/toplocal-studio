@@ -7,6 +7,7 @@ const ACTIVE = ["running", "verifying"];
 // `onInstalled` once a download finishes so feature availability can be refreshed.
 export function useModels(onInstalled) {
   const [models, setModels] = useState([]);
+  const [hasHfToken, setHasHfToken] = useState(false);
   const timer = useRef(null);
   const installedRef = useRef(onInstalled);
   installedRef.current = onInstalled;
@@ -14,8 +15,9 @@ export function useModels(onInstalled) {
 
   const refresh = useCallback(async () => {
     try {
-      const { models: list } = await api.models();
+      const { models: list, hasHfToken: token } = await api.models();
       setModels(list);
+      setHasHfToken(Boolean(token));
       let active = false;
       for (const m of list) {
         const state = m.download?.state;
@@ -59,7 +61,7 @@ export function useModels(onInstalled) {
     [refresh],
   );
 
-  return { models, refresh, download, cancel, remove };
+  return { models, hasHfToken, refresh, download, cancel, remove };
 }
 
 export function formatBytes(bytes) {

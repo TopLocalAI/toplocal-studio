@@ -1,7 +1,8 @@
 """Model catalog: what each feature needs, where the files live, and the memory floor.
 
 Sizes and memory floors come from the measurements in results/*-benchmark.md.
-`files` are relative to config.MODELS_DIR; the first existing entry of a `choices`
+`needsToken` marks models whose Hugging Face repo is gated: the user accepts the license on
+`licensePage` and saves an access token first. `files` are relative to config.MODELS_DIR; the first existing entry of a `choices`
 list is used, so a better build can replace a fallback without code changes.
 """
 from . import config
@@ -72,7 +73,8 @@ MLX_MODELS = [
      "licenseUrl": "https://huggingface.co/black-forest-labs/FLUX.2-klein-9B", "licenseNote": "FLUX.2 klein 9B 采用 FLUX 非商用许可证：仅限个人和非商业用途。"},
     {"id": "image.klein4b", "sources": [{"repo": "Runpod/FLUX.2-klein-4B-mflux-4bit", "dest": "image/mlx/flux2-klein-4b-4bit"}], "module": "image", "name": "FLUX.2 klein 4B", "engine": "mflux",
      "files": ["image/mlx/flux2-klein-4b-4bit/transformer"], "sizeBytes": int(4.3 * GB), "license": "Apache-2.0"},
-    {"id": "video.ltx25", "sources": [{"repo": "dgrauet/ltx-2.5-mlx-q4", "exclude": r"transformer-dev|distilled-lora", "dest": "video/ltx-2.5-mlx-q4"}], "licenseUrl": "https://github.com/Lightricks/LTX-2/blob/main/LICENSE-2_x", "licenseNote": "LTX-2.x 社区许可证：个人和非商用免费；年收入超过 1000 万美元的公司商用需另行授权；须遵守其使用政策。", "module": "video", "name": "LTX-2.5 Distilled", "engine": "ltx-2-mlx",
+    {"id": "video.ltx25", "sources": [{"repo": "dgrauet/ltx-2.5-mlx-q4", "exclude": r"transformer-dev|distilled-lora", "dest": "video/ltx-2.5-mlx-q4"}], "licenseUrl": "https://github.com/Lightricks/LTX-2/blob/main/LICENSE-2_x", "licenseNote": "LTX-2.x 社区许可证：个人和非商用免费；年收入超过 1000 万美元的公司商用需另行授权；须遵守其使用政策。", "module": "video", "name": "LTX-2.5 Distilled", "engine": "ltx-2-mlx", "needsToken": True,
+     "licensePage": "https://huggingface.co/dgrauet/ltx-2.5-mlx-q4",
      "files": ["video/ltx-2.5-mlx-q4/transformer-distilled.safetensors"], "sizeBytes": int(30.5 * GB),
      "license": "LTX-2.x Community License"},
 ]
@@ -107,6 +109,7 @@ SDCPP_MODELS = [
                "llm": "image/sdcpp/text-encoders/Qwen3-4B-Q4_K_M.gguf"},
      "sizeBytes": int(4.9 * GB), "license": "Apache-2.0"},
     {"id": "video.ltx25", "module": "video", "name": "LTX-2.5 Distilled（实验）", "engine": "stable-diffusion.cpp",
+     "needsToken": True, "licensePage": "https://huggingface.co/Lightricks/LTX-2.5",
      "sources": [{"repo": "vantagewithai/LTX-2.5-GGUF", "sub": "distilled", "include": r"distilled-transformer-Q4_K_S\.gguf$", "dest": "video/ltx-2.5-gguf"},
                  {"repo": "Lightricks/LTX-2.5", "sub": "text_encoders", "include": r"comfy-int8-convrot\.safetensors$", "dest": "video/ltx-2.5-gguf"},
                  {"repo": "Lightricks/LTX-2.5", "sub": "vae", "include": r"^ltx-2\.5-(video-vae-conv|audio-vae)-bf16\.safetensors$", "dest": "video/ltx-2.5-gguf"}],

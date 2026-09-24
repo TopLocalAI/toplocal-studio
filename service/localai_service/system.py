@@ -88,5 +88,6 @@ def info() -> dict:
         "memoryGb": round(mem, 1),
         "tier": tier(mem),
         "diskFreeGb": round(usage.free / 1024**3, 1),
+        "diskTotalGb": round(usage.total / 1024**3, 1),
         "backend": config.AUDIOCPP_BACKEND,
     }

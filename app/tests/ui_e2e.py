@@ -315,7 +315,7 @@ def main() -> int:
         page.on("console", lambda m: errors.append(f"console.{m.type}: {m.text}") if m.type == "error" else None)
         page.on("pageerror", lambda e: errors.append(f"pageerror: {e}"))
         page.goto(BASE)
-        expect(page.locator(".rail-status.is-ready")).to_be_visible(timeout=30_000)
+        expect(page.locator(".rail[data-service=ready]")).to_be_visible(timeout=30_000)
         suite = [pages, music_generate, music_play, music_export, image_generate, image_edit_handoff,
                  image_to_video, video_generate, speech_tts, speech_asr, library, dark_mode]
         if os.environ.get("UI_FULL") == "1":  # every mode; about 20 extra minutes of generation

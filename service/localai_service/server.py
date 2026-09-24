@@ -4,7 +4,9 @@ import hmac
 import os
 import re
 import shutil
+import webbrowser
 from pathlib import Path
+from urllib.parse import urlparse
 
 from aiohttp import web
 
@@ -76,7 +78,23 @@ async def system_info(_):
 
 async def models(_):
     status = DOWNLOADS.status()
-    return web.json_response({"models": [m | {"download": status.get(m["id"])} for m in catalog.models_status()]})
+    return web.json_response({"models": [m | {"download": status.get(m["id"])} for m in catalog.models_status()],
+                              "hasHfToken": bool(settings.get("hfToken"))})
+
+
+# Hosts the UI may open in the system browser (license pages, the project page).
+OPEN_HOSTS = {"huggingface.co", "hf-mirror.com", "github.com", "creativecommons.org"}
+
+
+async def open_url(request):
+    """Open an allowlisted https link in the default browser (the webview cannot)."""
+    body = await request.json()
+    url = str(body.get("url", ""))
+    parsed = urlparse(url)
+    if parsed.scheme != "https" or parsed.hostname not in OPEN_HOSTS:
+        return web.json_response({"error": "不支持打开这个链接"}, status=400)
+    webbrowser.open(url)
+    return web.json_response({"ok": True})
 
 
 async def download_model(request):
@@ -283,6 +301,7 @@ def create_app() -> web.Application:
     app.router.add_post("/api/models/{id}/download", download_model)
     app.router.add_post("/api/models/{id}/cancel", cancel_download)
     app.router.add_delete("/api/models/{id}", delete_model)
+    app.router.add_post("/api/open", open_url)
     app.router.add_get("/api/settings", get_settings)
     app.router.add_post("/api/settings", put_settings)
     app.router.add_get("/api/jobs", list_jobs)

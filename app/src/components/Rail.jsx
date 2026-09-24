@@ -1,7 +1,8 @@
-import { GearSix, SquaresFour } from "@phosphor-icons/react";
+import { ArrowClockwise, GearSix, SquaresFour } from "@phosphor-icons/react";
+import logo from "../assets/logo.svg";
 import { MODULES } from "../data";
 
-export function Rail({ page, onNavigate, features, service }) {
+export function Rail({ page, onNavigate, onAbout, features, service, onRetry }) {
   const moduleState = (id) => {
     const list = features.filter((f) => f.module === id);
     if (!list.length) return "";
@@ -25,16 +26,24 @@ export function Rail({ page, onNavigate, features, service }) {
   );
 
   return (
-    <nav className="rail" aria-label="功能导航">
-      <div className="rail-brand" title="TopLocal Studio" aria-hidden="true">TL</div>
+    <nav className="rail" aria-label="功能导航" data-service={service}>
+      <button type="button" className="rail-logo" onClick={onAbout} title="关于 TopLocal Studio">
+        <img src={logo} alt="TopLocal Studio" width="40" height="40" />
+      </button>
       <div className="rail-group">{MODULES.map((m) => item(m.id, m.label, m.icon, moduleState(m.id)))}</div>
       <div className="rail-group rail-bottom">
         {item("library", "作品", SquaresFour)}
         {item("settings", "设置", GearSix)}
-        <span
-          className={`rail-status is-${service}`}
-          title={service === "ready" ? "本地引擎已就绪" : service === "offline" ? "本地引擎未连接" : "正在连接本地引擎"}
-        />
+        {/* Only shown when something needs attention: the engine is starting or unreachable. */}
+        {service === "checking" ? (
+          <span className="rail-status" role="status">
+            <i className="rail-spinner" /> 启动中
+          </span>
+        ) : service === "offline" ? (
+          <button type="button" className="rail-status is-offline" onClick={onRetry} title="本地引擎没有响应，点击重试">
+            <ArrowClockwise size={13} /> 未连接
+          </button>
+        ) : null}
       </div>
     </nav>
   );
