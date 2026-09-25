@@ -98,7 +98,10 @@ async def _generate_sdcpp(job: Job, prompt, seconds, width, height, seed, first)
             "--llm", catalog.part("video.ltx25", "llm"), "--vae", catalog.part("video.ltx25", "vae"),
             "--audio-vae", catalog.part("video.ltx25", "audioVae"), "--cfg-scale", "1.0", "--steps", 8,
             "--sampling-method", "euler", "--sigmas", DISTILLED_SIGMAS, "--video-frames", SECONDS[seconds],
-            "--fps", 24, "--vae-tiling", "--temporal-tiling", "-p", prompt, "-W", width, "-H", height, "-s", seed,
+            # Weights wait in RAM so the VAE decode has the GPU to itself, and 12×12-latent tiles
+            # (384 px) keep that decode within a few GB: with the defaults a 720p clip needed ~20 GB.
+            "--fps", 24, "--offload-to-cpu", "--vae-tiling", "--vae-tile-size", "12x12", "--temporal-tiling",
+            "-p", prompt, "-W", width, "-H", height, "-s", seed,
             "-o", raw]
     if first:
         args += ["-i", first]

@@ -2,6 +2,7 @@
 import functools
 import os
 import platform
+import re
 import shutil
 import subprocess
 
@@ -43,14 +44,24 @@ def memory_gb() -> float:
         return 0.0
 
 
+# Remote-desktop and fallback adapters that are not the GPU doing the work.
+_VIRTUAL_GPU = re.compile(r"oray|idd|virtual|basic|remote|parsec|citrix|meta|sunlogin|todesk|rdp", re.I)
+_DISCRETE_GPU = re.compile(r"nvidia|geforce|rtx|quadro|radeon|amd|arc", re.I)
+
+
+def pick_gpu(names: list[str]) -> str:
+    """The adapter to show: a discrete GPU first, then any real one, skipping virtual displays."""
+    real = [n for n in names if n and not _VIRTUAL_GPU.search(n)]
+    return next((n for n in real if _DISCRETE_GPU.search(n)), real[0] if real else "")
+
+
 def _windows_gpu() -> str:
-    """Name of the first display adapter (best effort; used only for display)."""
+    """Name of the main display adapter (best effort; used only for display)."""
     try:
         out = subprocess.run(
-            ["powershell", "-NoProfile", "-Command",
-             "(Get-CimInstance Win32_VideoController | Select-Object -First 1 -ExpandProperty Name)"],
-            capture_output=True, text=True, timeout=10, creationflags=0x08000000).stdout.strip()
-        return out.splitlines()[0] if out else ""
+            ["powershell", "-NoProfile", "-Command", "(Get-CimInstance Win32_VideoController).Name"],
+            capture_output=True, text=True, timeout=10, creationflags=0x08000000).stdout
+        return pick_gpu([line.strip() for line in out.splitlines()])
     except (OSError, subprocess.SubprocessError):
         return ""
 
