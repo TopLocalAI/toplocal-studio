@@ -81,6 +81,7 @@ EN: dict[str, str] = {
     "正在加载模型": "Loading model",
     "正在绘制": "Drawing",
     "正在重新绘制": "Drawing again",
+    "本地引擎长时间没有响应，已停止。请重试；如果仍然失败，请复制错误详情反馈给我们": "The local engine stopped responding and was stopped. Try again; if it keeps failing, copy the error details and send them to us.",
     "Qwen-Image 2.1 Turbo": "Qwen-Image 2.1 Turbo",
     "画质和排版最好，书法字和长段文字最准（仅限非商用）": "Best image quality and layout; the most accurate calligraphy and long text (non-commercial only)",
     "改字和换物体最准，其余部分几乎不动（仅限非商用）": "Most precise for changing text and objects; leaves the rest untouched (non-commercial only)",

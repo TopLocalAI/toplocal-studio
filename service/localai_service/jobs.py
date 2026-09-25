@@ -15,6 +15,8 @@ from typing import Awaitable, Callable
 from . import config, procs
 from .i18n import tr
 
+STALL_SECONDS = 600  # no engine output for this long means it hangs
+
 ACTIVE = ("queued", "running")
 # Engines must never fetch weights on their own (the model manager owns downloads), and
 # Python engines must flush output so progress can be parsed while they run.
@@ -98,11 +100,26 @@ class Job:
             env={**os.environ, **ENGINE_ENV, "PATH": _engine_path(), **(env or {})}, **procs.spawn_kwargs(),
         )
         stdout_chunks: list[str] = []
+        last_output = time.time()
+        stalled = False
+
+        async def watchdog():
+            # An engine that prints nothing for this long is hung (for example waiting on a
+            # system permission prompt): stop it so the queue keeps moving.
+            nonlocal stalled
+            while True:
+                await asyncio.sleep(15)
+                if time.time() - last_output > STALL_SECONDS and self._proc:
+                    stalled = True
+                    procs.kill_tree(self._proc.pid)
+                    return
 
         async def pump(stream, path, keep):
+            nonlocal last_output
             with open(path, "ab") as log:
                 buf = b""
                 while chunk := await stream.read(4096):
+                    last_output = time.time()
                     log.write(chunk)
                     buf += chunk
                     *lines, buf = buf.replace(b"\r", b"\n").split(b"\n")
@@ -119,11 +136,17 @@ class Job:
                     if on_line:
                         on_line(line)
 
-        await asyncio.gather(pump(self._proc.stdout, out_path, True), pump(self._proc.stderr, err_path, False))
-        code = await self._proc.wait()
+        guard = asyncio.create_task(watchdog())
+        try:
+            await asyncio.gather(pump(self._proc.stdout, out_path, True), pump(self._proc.stderr, err_path, False))
+            code = await self._proc.wait()
+        finally:
+            guard.cancel()
         self._proc = None
         if self._cancelled:
             raise JobCancelled()
+        if stalled:
+            raise JobFailed(tr("本地引擎长时间没有响应，已停止。请重试；如果仍然失败，请复制错误详情反馈给我们"))
         if code != 0:
             tail = err_path.read_text(encoding="utf-8", errors="replace").strip().splitlines()[-3:]
             raise RuntimeError(f"{Path(str(cmd[0])).name} exited with {code}: {' | '.join(tail)}")

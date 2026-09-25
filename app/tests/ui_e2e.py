@@ -114,6 +114,43 @@ def image_generate(page):
     page.screenshot(path=SHOTS / "image-result.png")
 
 
+@step("图片-Qwen-Image 2.1 生成与改图")
+def image_qwen(page):
+    nav(page, "图片")
+    page.get_by_role("tab", name="生成").click()
+    here(page, "#img-text").fill("一张复古电影海报，标题写着“长安夜话”，唐代长安城夜景，灯笼与飞檐")
+    pick_model(page, "Qwen-Image 2.1")
+    page.get_by_role("radio", name="3:4").click()
+    page.get_by_role("radio", name="标准").first.click()
+    page.get_by_role("button", name="生成图片").click()
+    wait_job(page)
+    expect(here(page, ".result-image")).to_be_visible()
+    page.get_by_role("button", name="编辑这张").click()
+    here(page, "#img-edit").fill("把标题“长安夜话”改成“洛阳花开”")
+    pick_model(page, "Qwen-Image 2.1")
+    page.get_by_role("button", name="开始修改").click()
+    wait_job(page)
+    expect(here(page, ".result-image")).to_be_visible()
+    page.screenshot(path=SHOTS / "image-qwen-edit.png")
+
+
+@step("图片-高清 16:9")
+def image_hd(page):
+    nav(page, "图片")
+    page.get_by_role("tab", name="生成").click()
+    here(page, "#img-text").fill("雨后的城市街道，霓虹倒映在积水里，电影感")
+    pick_model(page, "Z-Image")
+    page.get_by_role("radio", name="16:9").click()
+    page.get_by_role("radio", name="高清").first.click()
+    page.get_by_role("button", name="生成图片").click()
+    wait_job(page)
+    img = here(page, ".result-image")
+    expect(img).to_be_visible()
+    size = img.evaluate("i => [i.naturalWidth, i.naturalHeight]")
+    assert size == [1920, 1088], size
+    page.get_by_role("radio", name="标准").first.click()
+
+
 @step("图片-编辑这张")
 def image_edit_handoff(page):
     page.get_by_role("button", name="编辑这张").click()
@@ -373,6 +410,10 @@ def main() -> int:
         browser = p.webkit.launch()
         page = browser.new_page(viewport={"width": 1440, "height": 900})
         page.add_init_script("localStorage.setItem('toplocal-language', 'zh')")  # tests use the Chinese labels
+        # UI_RUNTIME='{"baseUrl": "http://127.0.0.1:PORT", "token": "..."}' drives a packaged app's service
+        # the way the desktop shell does (serve app/dist and point UI_BASE at it).
+        if os.environ.get("UI_RUNTIME"):
+            page.add_init_script(f"window.__LOCALAI__ = {os.environ['UI_RUNTIME']};")
         page.on("console", lambda m: errors.append(f"console.{m.type}: {m.text}") if m.type == "error" else None)
         page.on("pageerror", lambda e: errors.append(f"pageerror: {e}"))
         page.goto(BASE)
@@ -381,7 +422,7 @@ def main() -> int:
                  image_to_video, video_generate, speech_tts, speech_asr, library, dark_mode]
         if os.environ.get("UI_FULL") == "1":  # every mode; about 20 extra minutes of generation
             suite[-2:-2] = [music_prompt, music_instrumental, music_chinese, image_standard, image_edit_run,
-                            video_text, video_720, speech_mixed, speech_clone, speech_asr_modes,
+                            image_qwen, image_hd, video_text, video_720, speech_mixed, speech_clone, speech_asr_modes,
                             example_image, example_music, example_asr, example_tts]
         for test in suite:
             test(page)
