@@ -285,22 +285,25 @@ def speech_asr_modes(page):
         expect(here(page, ".transcript p")).to_contain_text(words, timeout=LONG)
 
 
-@step("示例-图片一键生成")
+@step("示例-图片填入后生成")
 def example_image(page):
     nav(page, "图片")
     if here(page, ".thumb-examples").count():
         here(page, ".thumb-examples").click()
     here(page, ".example-card", has_text="浇花机器人").click()
+    expect(here(page, ".generation-overlay")).to_have_count(0)  # filling in never starts a job
+    here(page, ".generate-button").click()
     wait_job(page)
     expect(here(page, ".result-image")).to_be_visible()
     expect(here(page, "#img-text")).to_have_value("一个可爱的小机器人在阳台上给花浇水")
 
 
-@step("示例-纯音乐一键生成")
+@step("示例-纯音乐填入后生成")
 def example_music(page):
     nav(page, "音乐")
     here(page, ".recent-examples").click()
     here(page, ".example-card", has_text="雨天学习").click()
+    here(page, ".generate-button").click()
     wait_job(page)
     expect(here(page, ".quiet-player h2")).to_be_visible()
     expect(here(page, ".quiet-lyrics")).to_have_count(0)
@@ -314,15 +317,17 @@ def example_asr(page):
         if here(page, ".recent-examples").count():
             here(page, ".recent-examples").click()
         here(page, ".example-card", has_text=card).click()
+        here(page, ".generate-button").click()
         expect(here(page, ".transcript p")).to_contain_text(words, timeout=LONG)
 
 
-@step("示例-配音一键生成")
+@step("示例-配音填入后生成")
 def example_tts(page):
     page.get_by_role("tab", name="配音").click()
     if here(page, ".recent-examples").count():
         here(page, ".recent-examples").click()
     here(page, ".example-card", has_text="睡前故事").click()
+    here(page, ".generate-button").click()
     expect(here(page, ".transcript p")).to_contain_text("小兔子", timeout=LONG)
     expect(here(page, ".transcript audio")).to_be_visible()
 

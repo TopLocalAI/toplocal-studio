@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Copy, PencilSimple, Play, Sparkle } from "@phosphor-icons/react";
+import { Check, Copy, PencilSimple, Sparkle } from "@phosphor-icons/react";
 import { t } from "../i18n";
 
 // Spread cards over `n` columns, each into the currently shortest one (image aspect aware).
@@ -15,9 +15,9 @@ function masonry(items, n) {
 }
 
 // Shown on the result side before anything is selected: a greeting and example cards.
-// Clicking an example fills in its settings and, when the model is ready, runs it right away;
-// otherwise it only fills them in. Each prompt can also be copied.
-export function Welcome({ title, subtitle, examples, onPick, canRun, kind = "image", copyable = true }) {
+// Clicking an example fills in its prompt and settings; the user starts the generation.
+// Each prompt can also be copied.
+export function Welcome({ title, subtitle, examples, onPick, kind = "image", copyable = true }) {
   const [copied, setCopied] = useState(null);
   const copy = async (ex) => {
     try {
@@ -31,7 +31,7 @@ export function Welcome({ title, subtitle, examples, onPick, canRun, kind = "ima
 
   const card = (ex) => (
     <div key={ex.id} className="example-card">
-      <button type="button" className="example-main" onClick={() => onPick(ex, canRun)}>
+      <button type="button" className="example-main" onClick={() => onPick(ex)}>
         {ex.thumb ? (
           <span className="example-thumb" style={kind === "image" && ex.aspect ? { aspectRatio: ex.aspect.replace(":", " / ") } : undefined}>
             {ex.video ? (
@@ -42,7 +42,7 @@ export function Welcome({ title, subtitle, examples, onPick, canRun, kind = "ima
               <img src={ex.thumb} alt="" />
             )}
             <i className="example-go">
-              {canRun ? <><Play size={14} weight="fill" /> {t("生成")}</> : <><PencilSimple size={14} weight="bold" /> {t("填入")}</>}
+              <PencilSimple size={14} weight="bold" /> {t("填入")}
             </i>
           </span>
         ) : null}
@@ -68,7 +68,7 @@ export function Welcome({ title, subtitle, examples, onPick, canRun, kind = "ima
           <p>{t(subtitle)}</p>
         </div>
       </header>
-      <p className="welcome-label">{canRun ? t("试试这些例子，点一下就开始生成") : t("点一下例子，把提示词填进输入框")}</p>
+      <p className="welcome-label">{t("点一下例子，把提示词填进输入框")}</p>
       {kind === "image" ? (
         <div className="welcome-masonry">
           {masonry(examples, 3).map((column, i) => (

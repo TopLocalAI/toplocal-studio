@@ -71,19 +71,13 @@ export function ImagePage({ active = true, features, serviceReady, onAnimate , o
     }
   };
 
-  const runExample = async (ex, run) => {
-    const prompt = t(ex.prompt);
+  // Examples only fill in the form; the user starts the generation.
+  const fillExample = (ex) => {
     setMode("generate");
-    setText(prompt);
+    setText(t(ex.prompt));
     setStyles(ex.styles);
     setAspect(ex.aspect);
     setError("");
-    if (!run) return;
-    try {
-      await job.submit("image", "generate", { text: prompt, styles: ex.styles, aspect: ex.aspect, model: genModel?.model });
-    } catch (e) {
-      setError(e.message);
-    }
   };
 
   const editThis = () => {
@@ -194,8 +188,7 @@ export function ImagePage({ active = true, features, serviceReady, onAnimate , o
               title="画一张图，或改一张图"
               subtitle="用一句话描述画面，中英文字也能写对；也可以上传图片，说说想怎么改。"
               examples={IMAGE_EXAMPLES}
-              onPick={runExample}
-              canRun={serviceReady && !job.running && createReady}
+              onPick={fillExample}
             />
           )}
           <JobOverlay job={job} />

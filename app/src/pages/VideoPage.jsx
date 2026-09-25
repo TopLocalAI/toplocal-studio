@@ -86,17 +86,11 @@ export function VideoPage({ active = true, features, serviceReady, system, initi
     }
   };
 
-  const runExample = async (ex, run) => {
-    const prompt = t(ex.prompt);
+  // Examples only fill in the form; the user starts the generation.
+  const fillExample = (ex) => {
     setMode("text");
-    setText(prompt);
+    setText(t(ex.prompt));
     setError("");
-    if (!run) return;
-    try {
-      await job.submit("video", "generate", { text: prompt, seconds, resolution, enhance, source: null, model: model?.model });
-    } catch (e) {
-      setError(e.message);
-    }
   };
 
   if (feature && !supported) {
@@ -208,8 +202,7 @@ export function VideoPage({ active = true, features, serviceReady, system, initi
               subtitle="用一句话或一张图片，生成几秒钟带声音的短视频。"
               examples={VIDEO_EXAMPLES}
               kind="video"
-              onPick={runExample}
-              canRun={serviceReady && !job.running && ready}
+              onPick={fillExample}
             />
           )}
           <JobOverlay job={job} />

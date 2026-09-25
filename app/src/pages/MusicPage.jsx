@@ -122,22 +122,12 @@ export function MusicPage({ active = true, features, serviceReady , onModelsChan
     }
   };
 
-  const runExample = async (ex, run) => {
-    const prompt = t(ex.prompt);
-    const exampleModel = ex.mode === "instrumental" ? "music.ace" : chosen?.model;
+  // Examples only fill in the form; the user starts the generation.
+  const fillExample = (ex) => {
     setMode(ex.mode);
-    setTexts((prev) => ({ ...prev, [ex.mode]: prompt }));
+    setTexts((prev) => ({ ...prev, [ex.mode]: t(ex.prompt) }));
     if (ex.styles.length) setStyles(ex.styles);
     setError("");
-    if (!run) return;
-    try {
-      await generation.submit("music", "generate", {
-        mode: ex.mode, text: prompt, styles: ex.styles, duration: 60, model: exampleModel,
-        engine: exampleModel === "music.yue2" ? "chinese" : "standard",
-      });
-    } catch (e) {
-      setError(e.message);
-    }
   };
 
   const startExport = async () => {
@@ -255,8 +245,7 @@ export function MusicPage({ active = true, features, serviceReady , onModelsChan
               subtitle="一句话、自己的歌词或纯音乐，都能生成完整的歌曲。"
               examples={MUSIC_EXAMPLES}
               kind="music"
-              onPick={runExample}
-              canRun={serviceReady && !generation.running && Boolean(chosen?.installed) && writerReady}
+              onPick={fillExample}
             />
           }
         />

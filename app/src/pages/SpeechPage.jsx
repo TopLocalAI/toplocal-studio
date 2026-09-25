@@ -80,25 +80,22 @@ export function SpeechPage({ active = true, features, serviceReady , onModelsCha
     }
   };
 
-  const runExample = async (ex, run) => {
+  // Examples only fill in the form (text and voice, or the sample recording); the user
+  // starts the job.
+  const fillExample = async (ex) => {
     setError("");
-    if (mode === "transcribe" && !run) return; // a sample recording, nothing to fill in
+    if (mode !== "transcribe") {
+      setText(t(ex.prompt));
+      setVoice(ex.voice);
+      return;
+    }
+    if (!serviceReady) return;
     try {
-      if (mode === "transcribe") {
-        // The sample recording ships with the app; upload it like a user file.
-        const blob = await (await fetch(ex.audio)).blob();
-        const name = ex.audio.split("/").pop();
-        const info = await uploadFile(new File([blob], name, { type: blob.type || "audio/mp4" }));
-        const picked = { upload: info.id, preview: "", name };
-        setSource(picked);
-        await job.submit("speech", "transcribe", { source: picked, sourceName: t(ex.title), language: "", model: asrModel?.model });
-      } else {
-        const prompt = t(ex.prompt);
-        setText(prompt);
-        setVoice(ex.voice);
-        if (!run) return;
-        await job.submit("speech", "synthesize", { text: prompt, voice: { preset: ex.voice }, model: ttsModel?.model });
-      }
+      // The sample recording ships with the app; upload it like a user file.
+      const blob = await (await fetch(ex.audio)).blob();
+      const name = ex.audio.split("/").pop();
+      const info = await uploadFile(new File([blob], name, { type: blob.type || "audio/mp4" }));
+      setSource({ upload: info.id, preview: "", name });
     } catch (e) {
       setError(e.message);
     }
@@ -233,8 +230,7 @@ export function SpeechPage({ active = true, features, serviceReady , onModelsCha
               subtitle="上传录音或视频，得到文字稿和字幕，长度不限，方言也能听懂。"
               examples={ASR_EXAMPLES}
               kind="text"
-              onPick={runExample}
-              canRun={serviceReady && !job.running && Boolean(asrModel?.installed)}
+              onPick={fillExample}
               copyable={false}
             />
           ) : (
@@ -243,8 +239,7 @@ export function SpeechPage({ active = true, features, serviceReady , onModelsCha
               subtitle="选一个音色把文字读出来，也可以用几秒钟录音克隆你自己的声音。"
               examples={TTS_EXAMPLES}
               kind="text"
-              onPick={runExample}
-              canRun={serviceReady && !job.running && Boolean(ttsModel?.installed)}
+              onPick={fillExample}
             />
           )}
           <JobOverlay job={job} />
