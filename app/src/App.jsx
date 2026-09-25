@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "./api";
+import { refreshModels } from "./hooks/useModels";
 import { useLanguage } from "./i18n";
 import { FirstRunDialog } from "./components/FirstRunDialog";
 import { Rail } from "./components/Rail";
@@ -54,6 +55,7 @@ export function App() {
   const refreshSystem = useCallback(async () => {
     try {
       setSystem(await api.system());
+      refreshModels(); // feature readiness and the model list must agree
       failures.current = 0;
       setService("ready");
     } catch {

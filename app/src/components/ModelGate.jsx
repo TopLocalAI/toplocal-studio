@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CloudArrowDown, Key, X } from "@phosphor-icons/react";
 import { openExternal } from "../api";
-import { formatBytes, isDownloading, useModels } from "../hooks/useModels";
+import { formatBytes, isDownloading, refreshModels, useModels } from "../hooks/useModels";
 import { t } from "../i18n";
 
 // Shown in place of a module's controls when the models a feature needs are missing.
@@ -16,6 +16,16 @@ export function ModelGate({ features, featureIds, modelIds, onInstalled }) {
     ? modelIds.filter(Boolean)
     : features.filter((f) => featureIds.includes(f.id) && f.supported && !f.ready).flatMap((f) => f.models);
   const needed = [...new Set(wanted)].map((id) => models.find((m) => m.id === id)).filter((m) => m && !m.installed);
+
+  // While something is missing, re-check now and then: files may arrive from another
+  // window, a manual copy, or a download the list hasn't seen finish.
+  const missing = needed.length > 0;
+  useEffect(() => {
+    if (!missing) return undefined;
+    const id = setInterval(refreshModels, 5000);
+    return () => clearInterval(id);
+  }, [missing]);
+
   if (!needed.length) return null;
 
   const total = needed.reduce((s, m) => s + m.sizeBytes, 0);
