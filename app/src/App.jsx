@@ -34,7 +34,7 @@ function KeepAlive({ active, children }) {
 }
 
 export function App() {
-  const [page, setPage] = useState("music");
+  const [page, setPage] = useState("image");
   const [theme, setTheme] = useState(initialTheme);
   const [language, setLanguage] = useLanguage();
   const [system, setSystem] = useState(null);
