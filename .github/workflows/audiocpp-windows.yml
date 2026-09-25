@@ -1,0 +1,90 @@
+# Builds audio.cpp for Windows (Vulkan) without AVX-512, and uploads the zip to R2.
+# Upstream's windows-x64-vulkan release is compiled for the build machine's CPU and crashes
+# with STATUS_ILLEGAL_INSTRUCTION (0xC000001D) on CPUs without AVX-512 (most desktop Intel).
+# Run by hand when the audio.cpp version changes, then put the printed URL and sha256 into
+# packaging/windows-engines.json.
+name: audio.cpp Windows engine
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: audio.cpp tag
+        default: v0.8.2
+      cpu:
+        description: CPU instruction set (avx2 or baseline)
+        default: avx2
+
+permissions:
+  contents: read
+
+env:
+  VULKAN_VERSION: "1.4.357.0"
+
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: 0xShug0/audio.cpp
+          ref: ${{ inputs.version }}
+          fetch-depth: 0
+
+      - name: Install Vulkan SDK
+        shell: pwsh
+        run: |
+          curl.exe -o "$env:RUNNER_TEMP\VulkanSDK-Installer.exe" -L "https://sdk.lunarg.com/sdk/download/${env:VULKAN_VERSION}/windows/vulkansdk-windows-X64-${env:VULKAN_VERSION}.exe"
+          & "$env:RUNNER_TEMP\VulkanSDK-Installer.exe" --accept-licenses --default-answer --confirm-command install
+          Add-Content $env:GITHUB_ENV "VULKAN_SDK=C:\\VulkanSDK\\${env:VULKAN_VERSION}"
+          Add-Content $env:GITHUB_PATH "C:\\VulkanSDK\\${env:VULKAN_VERSION}\\bin"
+
+      - name: Build audiocpp_cli
+        shell: pwsh
+        run: |
+          $v = "${{ inputs.version }}".TrimStart("v")
+          .\scripts\build_windows.ps1 -Preset windows-vulkan-release -Target audiocpp_cli -DeploymentBuild -NativeModelManager -CpuArch ${{ inputs.cpu }} -NativeCpu OFF -Llamafile OFF -Version $v
+
+      - name: Bundle VC runtime, license and model specs
+        shell: pwsh
+        working-directory: build/windows-vulkan-release/bin
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vs = & $vswhere -latest -property installationPath
+          $redist = Get-ChildItem "$vs\VC\Redist\MSVC" -Directory |
+            Sort-Object { try { [version]$_.Name } catch { [version]'0.0' } } -Descending |
+            Select-Object -First 1
+          foreach ($sub in 'x64\Microsoft.VC143.CRT', 'x64\Microsoft.VC143.OPENMP') {
+            $dir = Join-Path $redist.FullName $sub
+            if (Test-Path $dir) {
+              Get-ChildItem "$dir\*.dll" | Where-Object { $_.Name -match '^(vcruntime140|msvcp140|vcomp140)' } |
+                Copy-Item -Destination . -ErrorAction SilentlyContinue
+            }
+          }
+          Copy-Item ..\..\..\LICENSE .
+          Copy-Item -Recurse ..\..\..\model_specs .\model_specs
+          Get-ChildItem | Select-Object Name, Length | Out-String | Write-Host
+
+      - name: Zip and upload to R2
+        shell: pwsh
+        working-directory: build/windows-vulkan-release/bin
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          AWS_REQUEST_CHECKSUM_CALCULATION: WHEN_REQUIRED
+          AWS_RESPONSE_CHECKSUM_VALIDATION: WHEN_REQUIRED
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_PUBLIC_URL: ${{ vars.R2_PUBLIC_URL }}
+        run: |
+          $name = "audio-${{ inputs.version }}-bin-windows-x64-vulkan-${{ inputs.cpu }}.zip"
+          $zip = Join-Path $env:RUNNER_TEMP $name
+          Compress-Archive -Path audiocpp_cli.exe, *.dll, LICENSE, model_specs -DestinationPath $zip
+          $sha = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
+          $key = "toplocal-studio/engines/$name"
+          aws s3 cp $zip "s3://$env:R2_BUCKET/$key" --endpoint-url $env:R2_ENDPOINT --content-type application/zip --no-progress
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          "url: $env:R2_PUBLIC_URL/$key" | Tee-Object -Append $env:GITHUB_STEP_SUMMARY
+          "sha256: $sha" | Tee-Object -Append $env:GITHUB_STEP_SUMMARY
