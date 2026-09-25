@@ -122,13 +122,14 @@ export function MusicPage({ active = true, features, serviceReady , onModelsChan
     }
   };
 
-  const runExample = async (ex) => {
+  const runExample = async (ex, run) => {
     const prompt = t(ex.prompt);
     const exampleModel = ex.mode === "instrumental" ? "music.ace" : chosen?.model;
     setMode(ex.mode);
     setTexts((prev) => ({ ...prev, [ex.mode]: prompt }));
     if (ex.styles.length) setStyles(ex.styles);
     setError("");
+    if (!run) return;
     try {
       await generation.submit("music", "generate", {
         mode: ex.mode, text: prompt, styles: ex.styles, duration: 60, model: exampleModel,
@@ -255,7 +256,7 @@ export function MusicPage({ active = true, features, serviceReady , onModelsChan
               examples={MUSIC_EXAMPLES}
               kind="music"
               onPick={runExample}
-              disabled={!serviceReady || generation.running || !chosen?.installed || !writerReady}
+              canRun={serviceReady && !generation.running && Boolean(chosen?.installed) && writerReady}
             />
           }
         />

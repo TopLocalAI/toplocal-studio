@@ -71,13 +71,14 @@ export function ImagePage({ active = true, features, serviceReady, onAnimate , o
     }
   };
 
-  const runExample = async (ex) => {
+  const runExample = async (ex, run) => {
     const prompt = t(ex.prompt);
     setMode("generate");
     setText(prompt);
     setStyles(ex.styles);
     setAspect(ex.aspect);
     setError("");
+    if (!run) return;
     try {
       await job.submit("image", "generate", { text: prompt, styles: ex.styles, aspect: ex.aspect, model: genModel?.model });
     } catch (e) {
@@ -194,7 +195,7 @@ export function ImagePage({ active = true, features, serviceReady, onAnimate , o
               subtitle="用一句话描述画面，中英文字也能写对；也可以上传图片，说说想怎么改。"
               examples={IMAGE_EXAMPLES}
               onPick={runExample}
-              disabled={!serviceReady || job.running || !createReady}
+              canRun={serviceReady && !job.running && createReady}
             />
           )}
           <JobOverlay job={job} />

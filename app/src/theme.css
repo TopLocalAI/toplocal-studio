@@ -988,29 +988,59 @@ button.token-tag {
 }
 
 .example-card {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  padding: 0;
+  position: relative;
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 12px;
-  color: var(--text);
   background: var(--panel);
-  text-align: left;
-  cursor: pointer;
   transition: border-color 160ms ease, box-shadow 200ms ease, transform 200ms ease;
 }
 
-.example-card:hover:not(:disabled) {
+.example-card:hover {
   border-color: var(--border-strong);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
   transform: translateY(-1px);
 }
 
-.example-card:disabled {
-  cursor: default;
-  opacity: 0.6;
+.example-main {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  color: var(--text);
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* Copy the prompt: top-right corner of the text block */
+.example-copy {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-soft);
+  background: var(--panel);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 160ms ease, color 160ms ease;
+}
+
+.example-card:hover .example-copy,
+.example-copy:focus-visible {
+  opacity: 1;
+}
+
+.example-copy:hover {
+  color: var(--text);
 }
 
 .example-thumb {
@@ -1054,7 +1084,7 @@ button.token-tag {
   transition: opacity 160ms ease;
 }
 
-.example-card:hover:not(:disabled) .example-go {
+.example-card:hover .example-go {
   opacity: 1;
 }
 
@@ -1062,7 +1092,7 @@ button.token-tag {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 12px 14px 14px;
+  padding: 12px 40px 14px 14px;
 }
 
 .example-text strong {

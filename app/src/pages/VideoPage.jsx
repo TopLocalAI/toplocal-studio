@@ -86,11 +86,12 @@ export function VideoPage({ active = true, features, serviceReady, system, initi
     }
   };
 
-  const runExample = async (ex) => {
+  const runExample = async (ex, run) => {
     const prompt = t(ex.prompt);
     setMode("text");
     setText(prompt);
     setError("");
+    if (!run) return;
     try {
       await job.submit("video", "generate", { text: prompt, seconds, resolution, enhance, source: null, model: model?.model });
     } catch (e) {
@@ -208,7 +209,7 @@ export function VideoPage({ active = true, features, serviceReady, system, initi
               examples={VIDEO_EXAMPLES}
               kind="video"
               onPick={runExample}
-              disabled={!serviceReady || job.running || !ready}
+              canRun={serviceReady && !job.running && ready}
             />
           )}
           <JobOverlay job={job} />

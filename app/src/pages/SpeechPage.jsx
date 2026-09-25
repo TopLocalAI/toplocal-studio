@@ -80,8 +80,9 @@ export function SpeechPage({ active = true, features, serviceReady , onModelsCha
     }
   };
 
-  const runExample = async (ex) => {
+  const runExample = async (ex, run) => {
     setError("");
+    if (mode === "transcribe" && !run) return; // a sample recording, nothing to fill in
     try {
       if (mode === "transcribe") {
         // The sample recording ships with the app; upload it like a user file.
@@ -95,6 +96,7 @@ export function SpeechPage({ active = true, features, serviceReady , onModelsCha
         const prompt = t(ex.prompt);
         setText(prompt);
         setVoice(ex.voice);
+        if (!run) return;
         await job.submit("speech", "synthesize", { text: prompt, voice: { preset: ex.voice }, model: ttsModel?.model });
       }
     } catch (e) {
@@ -232,7 +234,8 @@ export function SpeechPage({ active = true, features, serviceReady , onModelsCha
               examples={ASR_EXAMPLES}
               kind="text"
               onPick={runExample}
-              disabled={!serviceReady || job.running || !asrModel?.installed}
+              canRun={serviceReady && !job.running && Boolean(asrModel?.installed)}
+              copyable={false}
             />
           ) : (
             <Welcome
@@ -241,7 +244,7 @@ export function SpeechPage({ active = true, features, serviceReady , onModelsCha
               examples={TTS_EXAMPLES}
               kind="text"
               onPick={runExample}
-              disabled={!serviceReady || job.running || !ttsModel?.installed}
+              canRun={serviceReady && !job.running && Boolean(ttsModel?.installed)}
             />
           )}
           <JobOverlay job={job} />

@@ -10,6 +10,9 @@ export default {
 
   // Welcome and examples
   "试试这些例子，点一下就开始生成": "Try an example. One click starts generating",
+  "点一下例子，把提示词填进输入框": "Click an example to put its prompt in the box",
+  "填入": "Use",
+  "复制提示词": "Copy prompt",
   "示例": "Examples",
   "灵感和例子": "Ideas and examples",
   "生成": "Generate",
