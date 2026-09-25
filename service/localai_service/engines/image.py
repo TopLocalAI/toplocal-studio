@@ -20,6 +20,15 @@ ASPECTS = {  # ~1 MP, multiples of 16
     "1:1": (1024, 1024), "4:3": (1152, 864), "3:4": (864, 1152),
     "16:9": (1280, 720), "9:16": (720, 1280),
 }
+HD_ASPECTS = {  # ~2 MP, multiples of 16
+    "1:1": (1440, 1440), "4:3": (1664, 1248), "3:4": (1248, 1664),
+    "16:9": (1920, 1088), "9:16": (1088, 1920),
+}
+HD_TIME = 2.2  # rough slowdown of a ~2 MP image over ~1 MP
+
+
+def _hd(p: dict) -> bool:
+    return p.get("size") == "hd"
 STYLE_PROMPTS = {
     "写实照片": "photorealistic photograph, natural light, high detail",
     "插画": "clean digital illustration, soft colors",
@@ -37,7 +46,7 @@ def _prompt(text: str, styles: list[str]) -> str:
 
 
 def _prepare_source(src, dest, max_pixels=1024 * 1024) -> tuple[int, int]:
-    """Flatten to RGB PNG around 1 MP with sides divisible by 16; returns the new size."""
+    """Flatten to RGB PNG of at most `max_pixels` with sides divisible by 16; returns the new size."""
     with Image.open(src) as im:
         im = im.convert("RGB")
         w, h = im.size
@@ -83,7 +92,10 @@ async def generate(job: Job) -> dict:
     if not text:
         raise JobFailed(tr("请先描述你想要的画面"))
     styles = [str(s) for s in p.get("styles", [])][:3]
-    width, height = ASPECTS.get(p.get("aspect"), ASPECTS["1:1"])
+    hd = _hd(p)
+    sizes = HD_ASPECTS if hd else ASPECTS
+    width, height = sizes.get(p.get("aspect"), sizes["1:1"])
+    slow = HD_TIME if hd else 1
     seed = int(p.get("seed") or random.randint(1, 2**31 - 1))
     # Older clients send quality=fast instead of a model.
     requested = p.get("model") or ("image.klein4b" if p.get("quality") == "fast" else None)
@@ -100,7 +112,7 @@ async def generate(job: Job) -> dict:
         await sdcpp.run(job, [*_sdcpp_model(model_id), "--cfg-scale", "1.0", "--steps", steps,
                               *(["--sampling-method", "euler"] if klein else []),
                               "-p", _prompt(text, styles), "-W", width, "-H", height, "-s", seed, "-o", out],
-                        steps=steps, expected=20 if model_id == "image.klein4b" else 40)
+                        steps=steps, expected=(20 if model_id == "image.klein4b" else 40) * slow)
         if not out.exists():
             raise JobFailed(tr("生成完成，但没有找到图片"))
         return {"image": "image.png", "width": width, "height": height, "model": model_id}
@@ -114,7 +126,7 @@ async def generate(job: Job) -> dict:
         steps, expected = 8, 40
     cmd += ["--prompt", _prompt(text, styles), "--width", width, "--height", height, "--seed", seed,
             "--low-ram", "--output", out]
-    await _run_mflux(job, cmd, steps, expected)
+    await _run_mflux(job, cmd, steps, expected * slow)
     if not out.exists():
         raise JobFailed(tr("生成完成，但没有找到图片"))
     return {"image": "image.png", "width": width, "height": height, "model": model_id}
@@ -136,12 +148,14 @@ async def edit(job: Job) -> dict:
     job.params = {**p, "seed": seed, "model": model_id}
     job.dir.mkdir(parents=True, exist_ok=True)
     src = job.dir / "source.png"
-    width, height = _prepare_source(source, src)
+    hd = _hd(p)
+    slow = HD_TIME if hd else 1
+    width, height = _prepare_source(source, src, max_pixels=(1440 * 1440) if hd else 1024 * 1024)
     out = job.dir / "image.png"
     if config.DIFFUSION_ENGINE == "sdcpp":
         await sdcpp.run(job, [*_sdcpp_model(model_id), "-r", src, "--cfg-scale", "1.0", "--steps", 4,
                               "--sampling-method", "euler", "-p", text, "-W", width, "-H", height, "-s", seed,
-                              "-o", out], steps=4, expected=60 if big else 30)
+                              "-o", out], steps=4, expected=(60 if big else 30) * slow)
         if not out.exists():
             raise JobFailed(tr("编辑完成，但没有找到图片"))
         return {"image": "image.png", "source": "source.png", "width": width, "height": height, "model": model_id}
@@ -149,7 +163,7 @@ async def edit(job: Job) -> dict:
     cmd = [*config.engine_cmd("mflux-generate-flux2-edit"), "--image-paths", src, "--model", model_dir.parent,
            "--base-model", KLEIN[model_id], "--steps", "4",
            "--prompt", text, "--width", width, "--height", height, "--seed", seed, "--low-ram", "--output", out]
-    await _run_mflux(job, cmd, 4, 40 if big else 22)
+    await _run_mflux(job, cmd, 4, (40 if big else 22) * slow)
     if not out.exists():
         raise JobFailed(tr("编辑完成，但没有找到图片"))
     return {"image": "image.png", "source": "source.png", "width": width, "height": height, "model": model_id}

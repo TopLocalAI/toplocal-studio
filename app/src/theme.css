@@ -5,6 +5,7 @@
  */
 
 :root {
+  color-scheme: light;
   font-family: "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue",
     "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   --bg: #fbfbfa;
@@ -36,6 +37,7 @@
 }
 
 :root[data-theme="dark"] {
+  color-scheme: dark; /* native controls (dropdown lists, scrollbars) follow the theme */
   --bg: #191919;
   --window: #191919;
   --panel: #1e1e1e;
@@ -1336,10 +1338,39 @@ button.token-tag {
 
 .aspect-glyph {
   display: block;
-  width: 16px;
-  max-height: 16px;
   border: 1.5px solid currentColor;
   border-radius: 3px;
+}
+
+/* Aspect ratio and size: one-click segments instead of native dropdowns */
+.composer-panel .aspect-picker {
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+
+.composer-panel .aspect-picker button {
+  gap: 5px;
+  padding: 7px 0 6px;
+  font-size: 12px;
+}
+
+.aspect-box {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+}
+
+.composer-panel .size-picker {
+  height: 40px;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 10px;
+}
+
+.composer-panel .size-picker button {
+  padding: 0;
+  font-size: 13px;
 }
 
 /* Compact model picker: fits half a row; the list opens wider */
@@ -1509,4 +1540,18 @@ button.token-tag {
   justify-content: flex-end;
   gap: 10px;
   margin-top: 20px;
+}
+
+/* Native dropdown lists: readable in both themes (Windows draws them itself) */
+select option {
+  color: var(--text);
+  background: var(--window);
+}
+
+.select-wrap select:focus-visible {
+  outline: none;
+}
+
+.select-wrap:focus-within {
+  border-color: var(--text);
 }

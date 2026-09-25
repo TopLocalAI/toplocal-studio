@@ -15,6 +15,30 @@ import { useJob } from "../hooks/useJob";
 import { t } from "../i18n";
 
 const ASPECTS = ["1:1", "4:3", "3:4", "16:9", "9:16"];
+const SIZES = [
+  { id: "standard", label: "标准", hint: "约 100 万像素" },
+  { id: "hd", label: "高清", hint: "约 200 万像素，耗时约两倍" },
+];
+
+// The ratio's outline inside a 16 px box.
+function AspectGlyph({ ratio }) {
+  const [w, h] = ratio.split(":").map(Number);
+  const style = w >= h ? { width: 16, height: (16 * h) / w } : { width: (16 * w) / h, height: 16 };
+  return <i className="aspect-glyph" style={style} />;
+}
+
+function SizePicker({ value, onChange }) {
+  return (
+    <div className="segmented size-picker" role="radiogroup" aria-label={t("清晰度")}>
+      {SIZES.map((s) => (
+        <button key={s.id} type="button" role="radio" aria-checked={value === s.id} title={t(s.hint)}
+          className={value === s.id ? "is-active" : ""} onClick={() => onChange(s.id)}>
+          {t(s.label)}
+        </button>
+      ))}
+    </div>
+  );
+}
 const STYLES = ["写实照片", "插画", "动漫", "3D", "水墨", "海报", "电影感"];
 
 export function ImagePage({ active = true, features, serviceReady, onAnimate , onModelsChanged }) {
@@ -23,6 +47,7 @@ export function ImagePage({ active = true, features, serviceReady, onAnimate , o
   const [editText, setEditText] = useState("");
   const [styles, setStyles] = useState([]);
   const [aspect, setAspect] = useState("1:1");
+  const [size, setSize] = useState("standard");
   const [source, setSource] = useState(null);
   const [current, setCurrent] = useState(null);
   const [recent, setRecent] = useState([]);
@@ -62,9 +87,9 @@ export function ImagePage({ active = true, features, serviceReady, onAnimate , o
     setError("");
     try {
       if (mode === "generate") {
-        await job.submit("image", "generate", { text, styles, aspect, model: genModel?.model, ...overrides });
+        await job.submit("image", "generate", { text, styles, aspect, size, model: genModel?.model, ...overrides });
       } else {
-        await job.submit("image", "edit", { text: editText, source, model: editModel?.model, ...overrides });
+        await job.submit("image", "edit", { text: editText, source, size, model: editModel?.model, ...overrides });
       }
     } catch (e) {
       setError(e.message);
@@ -88,7 +113,7 @@ export function ImagePage({ active = true, features, serviceReady, onAnimate , o
 
   const canRun =
     serviceReady && !job.running && (mode === "generate" ? text.trim() && createReady : editText.trim() && source && editReady);
-  const estimate = selected?.speed || "";
+  const estimate = (selected?.speed || "") + (size === "hd" ? t("（高清约两倍）") : "");
 
   return (
     <div className="studio">
@@ -127,17 +152,22 @@ export function ImagePage({ active = true, features, serviceReady, onAnimate , o
                 ))}
               </div>
             </div>
+            <div className="field-group">
+              <span className="field-label">{t("画面比例")}</span>
+              <div className="segmented aspect-picker" role="radiogroup" aria-label={t("画面比例")}>
+                {ASPECTS.map((a) => (
+                  <button key={a} type="button" role="radio" aria-checked={aspect === a}
+                    className={aspect === a ? "is-active" : ""} onClick={() => setAspect(a)}>
+                    <span className="aspect-box"><AspectGlyph ratio={a} /></span>
+                    {a}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="field-row">
               <div className="field-group">
-                <label htmlFor="img-aspect" className="field-label">{t("画面比例")}</label>
-                <div className="select-wrap">
-                  <i className="aspect-glyph" style={{ aspectRatio: aspect.replace(":", " / ") }} />
-                  <select id="img-aspect" value={aspect} onChange={(e) => setAspect(e.target.value)}>
-                    {ASPECTS.map((a) => (
-                      <option key={a} value={a}>{a}</option>
-                    ))}
-                  </select>
-                </div>
+                <span className="field-label">{t("清晰度")}</span>
+                <SizePicker value={size} onChange={setSize} />
               </div>
               <div className="field-group">
                 <span className="field-label">{t("模型")}</span>
@@ -159,9 +189,15 @@ export function ImagePage({ active = true, features, serviceReady, onAnimate , o
               maxLength={300}
               placeholder={t("例如：把招牌上的字改成“TopLocal Studio”，换成下雪的冬夜")}
             />
-            <div className="field-group">
-              <span className="field-label">{t("模型")}</span>
-              <ModelPicker options={tasks["image.edit"]} value={editModel} onChange={setEditModel} models={models} />
+            <div className="field-row">
+              <div className="field-group">
+                <span className="field-label">{t("清晰度")}</span>
+                <SizePicker value={size} onChange={setSize} />
+              </div>
+              <div className="field-group">
+                <span className="field-label">{t("模型")}</span>
+                <ModelPicker compact options={tasks["image.edit"]} value={editModel} onChange={setEditModel} models={models} />
+              </div>
             </div>
           </>
         )}
