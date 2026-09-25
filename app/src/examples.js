@@ -20,10 +20,10 @@ export const VIDEO_EXAMPLES = [
 ];
 
 export const MUSIC_EXAMPLES = [
-  { id: "summer", title: "夏日海边", prompt: "一首关于夏天海边的轻快华语流行歌，清爽男声，副歌朗朗上口", mode: "prompt", styles: ["华语流行", "欢快", "男声"], thumb: img("cover-summer") },
-  { id: "night", title: "雨夜城市", prompt: "一首雨夜城市感的抒情歌，温柔女声，钢琴和弦乐", mode: "prompt", styles: ["华语流行", "温柔", "女声", "钢琴"], thumb: img("cover-night") },
-  { id: "guofeng", title: "月下竹林", prompt: "一首中国风古风歌曲，古筝与笛子，意境悠远", mode: "prompt", styles: ["古风", "治愈"], thumb: img("cover-guofeng") },
-  { id: "lofi", title: "雨天学习", prompt: "雨天书桌旁的 lo-fi 学习音乐，电钢琴与轻柔鼓点，放松专注", mode: "instrumental", styles: [], thumb: img("cover-lofi") },
+  { id: "summer", title: "夏日海边", prompt: "一首关于夏天海边的轻快华语流行歌，清爽男声，副歌朗朗上口", mode: "prompt", styles: ["华语流行", "欢快", "男声"], thumb: img("cover-summer"), video: "/examples/music-summer.mp4" },
+  { id: "night", title: "雨夜城市", prompt: "一首雨夜城市感的抒情歌，温柔女声，钢琴和弦乐", mode: "prompt", styles: ["华语流行", "温柔", "女声", "钢琴"], thumb: img("cover-night"), video: "/examples/music-night.mp4" },
+  { id: "guofeng", title: "月下竹林", prompt: "一首中国风古风歌曲，古筝与笛子，意境悠远", mode: "prompt", styles: ["古风", "治愈"], thumb: img("cover-guofeng"), video: "/examples/music-guofeng.mp4" },
+  { id: "lofi", title: "雨天学习", prompt: "雨天书桌旁的 lo-fi 学习音乐，电钢琴与轻柔鼓点，放松专注", mode: "instrumental", styles: [], thumb: img("cover-lofi"), video: "/examples/music-lofi.mp4" },
 ];
 
 export const TTS_EXAMPLES = [

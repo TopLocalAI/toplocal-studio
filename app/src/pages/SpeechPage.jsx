@@ -6,6 +6,7 @@ import { SourcePicker } from "../components/SourcePicker";
 import { ModelGate } from "../components/ModelGate";
 import { ModelPicker } from "../components/ModelPicker";
 import { PromptBox } from "../components/PromptBox";
+import { ErrorMessage } from "../components/ErrorMessage";
 import { Welcome } from "../components/Welcome";
 import { ASR_EXAMPLES, TTS_EXAMPLES } from "../examples";
 import { useModels } from "../hooks/useModels";
@@ -201,7 +202,7 @@ export function SpeechPage({ active = true, features, serviceReady , onModelsCha
           <p className="generate-note">
             {!serviceReady ? t("正在连接本地引擎") : mode === "transcribe" ? t("1 小时录音约 2–5 分钟，全部在本机完成") : t("几秒到几十秒，全部在本机完成")}
           </p>
-          {error ? <p className="form-error" role="alert">{error}</p> : null}
+          <ErrorMessage text={error} />
         </div>
       </aside>
 

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { Pause, Play, SkipBack, SkipForward, SpeakerHigh } from "@phosphor-icons/react";
 import { formatDuration } from "../api";
 import { t } from "../i18n";
+import { VisualPreview } from "./VisualPreview";
 
 const SECTION_NAMES = {
   verse: "主歌", chorus: "副歌", "pre-chorus": "导歌", bridge: "桥段",
@@ -65,7 +66,7 @@ function Waveform({ seed, currentTime, duration, onSeek }) {
   );
 }
 
-export function MusicPlayer({ song, player, overlay, empty }) {
+export function MusicPlayer({ song, player, overlay, empty, visual }) {
   const duration = player.duration || song?.result?.duration || 0;
   const lyrics = song?.result?.lyrics && song.result.lyrics !== "[instrumental]" ? song.result.lyrics : "";
 
@@ -90,6 +91,12 @@ export function MusicPlayer({ song, player, overlay, empty }) {
               {formatDuration(duration)} · {song.result?.engine === "chinese" ? t("中文精唱") : t("标准")} · {t("本机生成")}
             </p>
           </header>
+          {visual ? (
+            <div className={lyrics ? "player-media has-lyrics" : "player-media"}>
+              <VisualPreview {...visual} analyserRef={player.analyserRef} isPlaying={player.isPlaying} />
+              {lyrics ? <Lyrics text={lyrics} /> : null}
+            </div>
+          ) : null}
           <Waveform seed={song.id} currentTime={player.currentTime} duration={duration} onSeek={player.seek} />
           <div className="quiet-controls">
             <button type="button" className="quiet-play" aria-label={player.isPlaying ? t("暂停") : t("播放")} onClick={player.toggle}>
@@ -116,7 +123,7 @@ export function MusicPlayer({ song, player, overlay, empty }) {
               onChange={(e) => player.setVolume(Number(e.target.value))}
             />
           </div>
-          {lyrics ? <Lyrics text={lyrics} /> : null}
+          {lyrics && !visual ? <Lyrics text={lyrics} /> : null}
         </>
       ) : (
         empty

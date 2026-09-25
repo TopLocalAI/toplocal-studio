@@ -14,8 +14,11 @@ export function useAudioPlayer(src, startAt = 0) {
     setCurrentTime(startAt);
     setDuration(0);
     if (!src) return undefined;
-    const audio = new Audio(src);
+    const audio = new Audio();
+    // The service is another origin: without CORS the analyser would only hear silence.
+    audio.crossOrigin = "anonymous";
     audio.preload = "metadata";
+    audio.src = src;
     audio.volume = volume;
     audioRef.current = audio;
 
@@ -58,7 +61,7 @@ export function useAudioPlayer(src, startAt = 0) {
       const context = new AudioContext();
       const source = context.createMediaElementSource(audio);
       const analyser = context.createAnalyser();
-      analyser.fftSize = 128;
+      analyser.fftSize = 2048;
       analyser.smoothingTimeConstant = 0.82;
       source.connect(analyser);
       analyser.connect(context.destination);

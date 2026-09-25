@@ -163,6 +163,23 @@ async def cancel_job(request):
     return web.json_response(_job_or_404(request).public())
 
 
+async def error_report(_):
+    """Details of the most recent failed job, for the user to copy into a bug report."""
+    failed = [j for j in MANAGER.jobs.values() if j.status == "error"]
+    if not failed:
+        return web.json_response({"report": ""})
+    job = max(failed, key=lambda j: j.finished or 0)
+    info = system.info()
+    params = {k: v for k, v in job.params.items() if k not in ("text", "source", "voice")}
+    lines = [f"TopLocal Studio {__version__} · {info.get('os', '')} · {info.get('chip', '')} · {info.get('memoryGb', '')} GB",
+             f"job: {job.module}/{job.task} {params}", f"error: {job.error}"]
+    for log in sorted(job.dir.glob("*.log*")) if job.dir.exists() else []:
+        tail = log.read_text(encoding="utf-8", errors="replace").strip().splitlines()[-60:]
+        if tail:
+            lines += ["", f"--- {log.name} (last {len(tail)} lines)", *tail]
+    return web.json_response({"report": "\n".join(lines)})
+
+
 async def list_jobs(_):
     active = [j.public() for j in MANAGER.jobs.values() if j.status in jobs.ACTIVE]
     return web.json_response({"jobs": active})
@@ -308,6 +325,7 @@ def create_app() -> web.Application:
     app.router.add_get("/api/settings", get_settings)
     app.router.add_post("/api/settings", put_settings)
     app.router.add_get("/api/jobs", list_jobs)
+    app.router.add_get("/api/error-report", error_report)
     app.router.add_post("/api/jobs", create_job)
     app.router.add_get("/api/jobs/{id}", get_job)
     app.router.add_post("/api/jobs/{id}/cancel", cancel_job)

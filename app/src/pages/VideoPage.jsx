@@ -6,6 +6,7 @@ import { SourcePicker } from "../components/SourcePicker";
 import { ModelGate } from "../components/ModelGate";
 import { ModelPicker } from "../components/ModelPicker";
 import { PromptBox } from "../components/PromptBox";
+import { ErrorMessage } from "../components/ErrorMessage";
 import { Welcome } from "../components/Welcome";
 import { VIDEO_EXAMPLES } from "../examples";
 import { useModels } from "../hooks/useModels";
@@ -188,7 +189,7 @@ export function VideoPage({ active = true, features, serviceReady, system, initi
                 ? t("先下载所选模型")
                 : t("预计{estimate}，带声音，全部在本机完成", { estimate: estimate(seconds, resolution, mode === "image") })}
           </p>
-          {error ? <p className="form-error" role="alert">{error}</p> : null}
+          <ErrorMessage text={error} />
         </div>
       </aside>
 

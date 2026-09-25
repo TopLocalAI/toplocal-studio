@@ -34,6 +34,7 @@ export const api = {
     request("/api/jobs", { method: "POST", body: JSON.stringify({ module, task, params }) }),
   job: (id) => request(`/api/jobs/${id}`),
   activeJobs: () => request("/api/jobs"),
+  errorReport: () => request("/api/error-report"),
   cancel: (id) => request(`/api/jobs/${id}/cancel`, { method: "POST" }),
   library: (module) => request(`/api/library${module ? `?module=${module}` : ""}`),
   remove: (id) => request(`/api/library/${id}`, { method: "DELETE" }),

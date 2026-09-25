@@ -93,11 +93,11 @@ def music_generate(page):
 
 @step("音乐-导出动效视频")
 def music_export(page):
+    # The style is picked under the live preview; export starts right away.
+    expect(here(page, ".visual-switch button")).to_have_count(3)
+    here(page, ".visual-switch button").nth(1).click()
+    page.screenshot(path=SHOTS / "music-visual-preview.png")
     page.get_by_role("button", name="导出动效视频").click()
-    expect(here(page, ".visual-choice .thumb")).to_have_count(3)
-    page.screenshot(path=SHOTS / "music-export-choose.png")
-    here(page, ".visual-choice .thumb").nth(1).click()
-    page.get_by_role("button", name="开始导出").click()
     expect(page.get_by_text("视频已准备好")).to_be_visible(timeout=LONG)
     page.get_by_role("button", name="关闭").click()
 

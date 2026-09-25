@@ -1555,3 +1555,125 @@ select option {
 .select-wrap:focus-within {
   border-color: var(--text);
 }
+
+/* Music: live preview of the animated-video export */
+.visual-preview {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.visual-stage {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  border-radius: 12px;
+  background: #000;
+}
+
+.visual-stage img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  animation: visual-zoom 22s linear forwards;
+  animation-play-state: paused;
+}
+
+.visual-stage.is-playing img {
+  animation-play-state: running;
+}
+
+@keyframes visual-zoom {
+  from { transform: scale(1); }
+  to { transform: scale(1.08); }
+}
+
+/* Same geometry as the export: 1060×118 wave, 58 px above the bottom of 1280×720 */
+.visual-stage canvas {
+  position: absolute;
+  left: 8.6%;
+  bottom: 8%;
+  width: 82.8%;
+  height: 16.4%;
+}
+
+.visual-switch {
+  display: flex;
+  gap: 8px;
+}
+
+.visual-switch button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 4px 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-soft);
+  background: var(--panel);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.visual-switch button img {
+  width: 36px;
+  height: 22px;
+  border-radius: 5px;
+  object-fit: cover;
+}
+
+.visual-switch button.is-active {
+  border-color: var(--text);
+  color: var(--text);
+}
+
+/* The player scrolls inside itself; actions and the recent strip keep their height */
+.studio-stage > .quiet-player {
+  overflow-y: auto;
+}
+
+.studio-stage > .song-actions,
+.studio-stage > .recent-strip {
+  flex-shrink: 0;
+}
+
+/* Visual preview beside the lyrics; stacked when the stage is narrow */
+.player-media {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 28px;
+}
+
+.player-media.has-lyrics {
+  grid-template-columns: minmax(0, 1.35fr) minmax(220px, 1fr);
+}
+
+.player-media .quiet-lyrics {
+  /* as tall as the preview column, scrolling inside; never makes the row taller */
+  height: 0;
+  min-height: 100%;
+  margin: 0;
+  padding: 0 4px 0 0;
+  border-top: 0;
+  overflow-y: auto;
+}
+
+@media (max-width: 1100px) {
+  .player-media.has-lyrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.form-error p {
+  margin: 0;
+}
+
+.error-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  font-size: 12px;
+}

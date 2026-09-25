@@ -12,6 +12,7 @@ import { api, fileUrl, formatDuration, saveResult } from "../api";
 import { ModelGate } from "../components/ModelGate";
 import { ModelPicker } from "../components/ModelPicker";
 import { PromptBox } from "../components/PromptBox";
+import { ErrorMessage } from "../components/ErrorMessage";
 import { Welcome } from "../components/Welcome";
 import { MUSIC_EXAMPLES } from "../examples";
 import { useModels } from "../hooks/useModels";
@@ -230,7 +231,7 @@ export function MusicPage({ active = true, features, serviceReady , onModelsChan
           <p className="generate-note">
             {blockedReason || t("预计约 {time}，全部在本机完成", { time: formatDuration(expected) })}
           </p>
-          {error ? <p className="form-error" role="alert">{error}</p> : null}
+          <ErrorMessage text={error} />
         </div>
       </aside>
 
@@ -239,6 +240,7 @@ export function MusicPage({ active = true, features, serviceReady , onModelsChan
           song={song}
           player={player}
           overlay={<JobOverlay job={generation} />}
+          visual={{ visuals: VISUAL_STYLES, visual, onVisualChange: setVisual }}
           empty={
             <Welcome
               title="写一首歌"
@@ -254,7 +256,7 @@ export function MusicPage({ active = true, features, serviceReady , onModelsChan
           <button type="button" className="button button-secondary" disabled={!song} onClick={() => save(song.id, song.result.audio, song.title)}>
             <DownloadSimple size={18} /> {t("下载音频")}
           </button>
-          <button type="button" className="button button-secondary" disabled={!song} onClick={() => setExportState({ open: true, status: "choose" })}>
+          <button type="button" className="button button-secondary" disabled={!song} onClick={startExport}>
             <FilmStrip size={18} /> {t("导出动效视频")}
           </button>
         </div>
