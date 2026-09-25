@@ -45,18 +45,41 @@ def _prompt(text: str, styles: list[str]) -> str:
     return text + ("。" + ", ".join(extras) if extras else "")
 
 
-def _prepare_source(src, dest, max_pixels=1024 * 1024) -> tuple[int, int]:
-    """Flatten to RGB PNG of at most `max_pixels` with sides divisible by 16; returns the new size."""
+# Keeps fp16 attention and linear layers from overflowing (sd.cpp docs/troubleshooting.md).
+# Needed on Vulkan for ~2 MP images, which otherwise decode to a flat white picture.
+SAFE_SCALE = ["--attn-scale", "0.0078125", "--linear-scale", "0.0078125"]
+
+
+def _flat(path) -> bool:
+    """True when the engine produced a blank (all white or all black) picture."""
+    with Image.open(path) as im:
+        lo, hi = im.convert("L").getextrema()
+    return hi - lo < 4
+
+
+async def _run_sdcpp_checked(job: Job, args: list, out, *, hd: bool, steps: int, expected: float) -> None:
+    """Run sd-cli; if the picture comes out blank, retry once with overflow-safe scaling."""
+    await sdcpp.run(job, [*args, *(SAFE_SCALE if hd else [])], steps=steps, expected=expected)
+    if out.exists() and _flat(out) and not hd:
+        out.unlink()
+        await sdcpp.run(job, [*args, *SAFE_SCALE], steps=steps, expected=expected, label="正在重新绘制")
+    if out.exists() and _flat(out):
+        raise JobFailed(tr("生成的图片是空白的，请换个提示词或改用标准清晰度再试"))
+
+
+def _prepare_source(src, dest, max_pixels=1024 * 1024, multiple=16) -> tuple[int, int]:
+    """Flatten to RGB PNG of at most `max_pixels` with sides divisible by `multiple`; returns the new size."""
     with Image.open(src) as im:
         im = im.convert("RGB")
         w, h = im.size
         scale = min(1.0, (max_pixels / (w * h)) ** 0.5)
-        nw, nh = max(256, int(w * scale) // 16 * 16), max(256, int(h * scale) // 16 * 16)
+        nw, nh = max(256, int(w * scale) // multiple * multiple), max(256, int(h * scale) // multiple * multiple)
         im.resize((nw, nh), Image.LANCZOS).save(dest)
     return nw, nh
 
 
 KLEIN = {"image.klein4b": "flux2-klein-4b", "image.klein9b": "flux2-klein-9b"}  # model id → mflux base model
+QWEN = "image.qwen21"  # stable-diffusion.cpp on every platform; sides must be multiples of 32
 
 
 def _sdcpp_model(model_id: str) -> list:
@@ -101,18 +124,22 @@ async def generate(job: Job) -> dict:
     requested = p.get("model") or ("image.klein4b" if p.get("quality") == "fast" else None)
     model_id = catalog.task_model("image.generate", requested, system.memory_gb())
     klein = model_id in KLEIN
+    qwen = model_id == QWEN
     if not catalog.installed(model_id):
         raise JobFailed(tr("图片模型未安装，请在设置里下载"))
     job.title = text[:16]
     job.params = {**p, "seed": seed, "model": model_id}
     out = job.dir / "image.png"
-    if config.DIFFUSION_ENGINE == "sdcpp":
-        steps = 4 if klein else 8
+    if config.DIFFUSION_ENGINE == "sdcpp" or qwen:
+        steps = 4 if klein or qwen else 8
+        if qwen:
+            width, height = width // 32 * 32, height // 32 * 32
+        expected = 80 if qwen else 20 if model_id == "image.klein4b" else 40
         job.dir.mkdir(parents=True, exist_ok=True)
-        await sdcpp.run(job, [*_sdcpp_model(model_id), "--cfg-scale", "1.0", "--steps", steps,
-                              *(["--sampling-method", "euler"] if klein else []),
-                              "-p", _prompt(text, styles), "-W", width, "-H", height, "-s", seed, "-o", out],
-                        steps=steps, expected=(20 if model_id == "image.klein4b" else 40) * slow)
+        await _run_sdcpp_checked(job, [*_sdcpp_model(model_id), "--cfg-scale", "1.0", "--steps", steps,
+                                       *(["--sampling-method", "euler"] if klein or qwen else []),
+                                       "-p", _prompt(text, styles), "-W", width, "-H", height, "-s", seed, "-o", out],
+                                 out, hd=hd, steps=steps, expected=expected * slow)
         if not out.exists():
             raise JobFailed(tr("生成完成，但没有找到图片"))
         return {"image": "image.png", "width": width, "height": height, "model": model_id}
@@ -141,6 +168,7 @@ async def edit(job: Job) -> dict:
     # klein 9B edits best but needs the 24–32 GB class; 16 GB machines use klein 4B.
     model_id = catalog.task_model("image.edit", p.get("model"), system.memory_gb())
     big = model_id == "image.klein9b"
+    qwen = model_id == QWEN
     if not catalog.installed(model_id):
         raise JobFailed(tr("图片编辑模型未安装，请在设置里下载"))
     seed = int(p.get("seed") or random.randint(1, 2**31 - 1))
@@ -150,12 +178,15 @@ async def edit(job: Job) -> dict:
     src = job.dir / "source.png"
     hd = _hd(p)
     slow = HD_TIME if hd else 1
-    width, height = _prepare_source(source, src, max_pixels=(1440 * 1440) if hd else 1024 * 1024)
+    width, height = _prepare_source(source, src, max_pixels=(1440 * 1440) if hd else 1024 * 1024,
+                                    multiple=32 if qwen else 16)
     out = job.dir / "image.png"
-    if config.DIFFUSION_ENGINE == "sdcpp":
-        await sdcpp.run(job, [*_sdcpp_model(model_id), "-r", src, "--cfg-scale", "1.0", "--steps", 4,
-                              "--sampling-method", "euler", "-p", text, "-W", width, "-H", height, "-s", seed,
-                              "-o", out], steps=4, expected=(60 if big else 30) * slow)
+    if config.DIFFUSION_ENGINE == "sdcpp" or qwen:
+        vision = ["--llm_vision", catalog.part(model_id, "vision")] if qwen else []
+        expected = 100 if qwen else 60 if big else 30
+        await _run_sdcpp_checked(job, [*_sdcpp_model(model_id), *vision, "-r", src, "--cfg-scale", "1.0", "--steps", 4,
+                                       "--sampling-method", "euler", "-p", text, "-W", width, "-H", height, "-s", seed,
+                                       "-o", out], out, hd=hd, steps=4, expected=expected * slow)
         if not out.exists():
             raise JobFailed(tr("编辑完成，但没有找到图片"))
         return {"image": "image.png", "source": "source.png", "width": width, "height": height, "model": model_id}

@@ -80,6 +80,14 @@ EN: dict[str, str] = {
     # shared progress labels (image, video, sdcpp)
     "正在加载模型": "Loading model",
     "正在绘制": "Drawing",
+    "正在重新绘制": "Drawing again",
+    "Qwen-Image 2.1 Turbo": "Qwen-Image 2.1 Turbo",
+    "画质和排版最好，书法字和长段文字最准（仅限非商用）": "Best image quality and layout; the most accurate calligraphy and long text (non-commercial only)",
+    "改字和换物体最准，其余部分几乎不动（仅限非商用）": "Most precise for changing text and objects; leaves the rest untouched (non-commercial only)",
+    "约 80 秒": "about 80 s",
+    "约 100 秒": "about 100 s",
+    "Qwen-Image 2.1 采用通义千问研究许可证：仅限研究和非商业用途。": "Qwen-Image 2.1 uses the Qwen Research License: research and non-commercial use only.",
+    "生成的图片是空白的，请换个提示词或改用标准清晰度再试": "The picture came out blank. Try another prompt or the standard resolution.",
     "正在解码": "Decoding",
 
     # engines/image.py
