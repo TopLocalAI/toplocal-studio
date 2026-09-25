@@ -2,8 +2,9 @@
   "comment": "Pinned upstream Windows x64 Vulkan builds bundled by build_windows.ps1. Update url and sha256 together.",
   "audiocpp": {
     "version": "v0.8.2",
-    "url": "https://github.com/0xShug0/audio.cpp/releases/download/v0.8.2/audio-v0.8.2-bin-windows-x64-vulkan.zip",
-    "sha256": "049278911b9fe4de7d9f87f7a869afbff4c4914a18b518c53d91762dcebe735e"
+    "url": "https://cdn.sci-draw.com/toplocal-studio/engines/audio-v0.8.2-bin-windows-x64-vulkan-avx2.zip",
+    "sha256": "646b5bd13604016cc0ae0466b84d2bd0a20db84d97b161d106d18688396b7a94",
+    "note": "Built by .github/workflows/audiocpp-windows.yml (AVX2, no AVX-512); upstream's Windows zip crashes on CPUs without AVX-512."
   },
   "silero_vad": {
     "url": "https://raw.githubusercontent.com/0xShug0/audio.cpp/v0.8.2/assets/framework/models/silero_vad/silero_vad_16k.safetensors",
