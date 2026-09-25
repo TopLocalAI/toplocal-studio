@@ -48,10 +48,14 @@ def clean_lyrics(text: str) -> str:
 
 
 async def write_lyrics(job: Job, description: str, styles: list[str], seed: int) -> str:
+    chinese = bool(re.search(r"[\u4e00-\u9fff]", description))
     style = f"风格：{'、'.join(styles)}。" if styles else ""
-    text = await complete(job, LYRICS_SYSTEM, f"{style}歌曲描述：{description}", seed=seed)
+    # Style tags are Chinese labels; state the lyric language explicitly so an English
+    # description still gets English lyrics.
+    language = "歌词全部使用中文。" if chinese else "Write the lyrics entirely in English."
+    text = await complete(job, LYRICS_SYSTEM, f"{style}歌曲描述：{description}\n{language}", seed=seed)
     lyrics = clean_lyrics(text)
-    if len(re.findall(r"[\u4e00-\u9fff]", description)) > 0:
+    if chinese:
         # Chinese song: drop stray Latin words inside lyric lines (section tags stay).
         lyrics = "\n".join(
             l if l.startswith("[") else re.sub(r"\s*[A-Za-z][A-Za-z'’-]*", "", l).strip()
