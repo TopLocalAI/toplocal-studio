@@ -7,16 +7,22 @@ const BASE = runtime.baseUrl || "";
 const TOKEN = runtime.token || "";
 
 async function request(path, options = {}) {
-  const response = await fetch(BASE + path, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(TOKEN ? { "X-LocalAI-Token": TOKEN } : {}),
-      ...(options.headers || {}),
-    },
-  });
+  let response;
+  try {
+    response = await fetch(BASE + path, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...(TOKEN ? { "X-LocalAI-Token": TOKEN } : {}),
+        ...(options.headers || {}),
+      },
+    });
+  } catch {
+    // The browser's own wording ("Failed to fetch", "Load failed") means nothing to users.
+    throw new Error(t("本地引擎暂时没有响应，请稍等几秒再试"));
+  }
   const body = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(body.error || t("本地服务返回 {status}", { status: response.status }));
+  if (!response.ok) throw new Error(body.error || t("本地引擎暂时没有响应，请稍等几秒再试"));
   return body;
 }
 

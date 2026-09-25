@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Awaitable, Callable
 
-from . import config, procs
+from . import config, errors, procs
 from .i18n import tr
 
 STALL_SECONDS = 600  # no engine output for this long means it hangs
@@ -214,9 +214,10 @@ class JobManager:
                 self._finish(job, "cancelled", label=tr("已取消"))
             except JobFailed as exc:
                 self._finish(job, "error", label=tr("生成失败"), error=str(exc))
-            except Exception as exc:  # engine crash: keep details in the log, show a short message
+            except Exception as exc:  # engine crash: details stay in the logs, the user gets plain words
+                job.dir.mkdir(parents=True, exist_ok=True)
                 (job.dir / "error.log").write_text(repr(exc), encoding="utf-8")
-                self._finish(job, "error", label=tr("生成失败"), error=tr("本地引擎出错：{error}", error=exc)[:300])
+                self._finish(job, "error", label=tr("生成失败"), error=errors.friendly(job.module, job.dir, exc))
 
 
 def library(module: str | None = None) -> list[dict]:

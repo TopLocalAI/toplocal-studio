@@ -15,6 +15,7 @@ export default {
   "复制提示词": "Copy prompt",
   "复制错误详情": "Copy error details",
   "已复制": "Copied",
+  "本地引擎暂时没有响应，请稍等几秒再试": "The local engine is not responding right now. Wait a few seconds and try again.",
   "画面风格": "Visual style",
   "示例": "Examples",
   "灵感和例子": "Ideas and examples",
