@@ -46,8 +46,10 @@ def _prompt(text: str, styles: list[str]) -> str:
 
 
 # Keeps fp16 attention and linear layers from overflowing (sd.cpp docs/troubleshooting.md).
-# Needed on Vulkan for ~2 MP images, which otherwise decode to a flat white picture.
 SAFE_SCALE = ["--attn-scale", "0.0078125", "--linear-scale", "0.0078125"]
+# ~2 MP decodes in one piece misbehave on Vulkan (blank pictures, seams across the middle);
+# decoding in small overlapping tiles avoids the large kernels and costs little.
+HD_DECODE = ["--vae-tiling"]
 
 
 def _flat(path) -> bool:
@@ -58,11 +60,13 @@ def _flat(path) -> bool:
 
 
 async def _run_sdcpp_checked(job: Job, args: list, out, *, hd: bool, steps: int, expected: float) -> None:
-    """Run sd-cli; if the picture comes out blank, retry once with overflow-safe scaling."""
-    await sdcpp.run(job, [*args, *(SAFE_SCALE if hd else [])], steps=steps, expected=expected)
-    if out.exists() and _flat(out) and not hd:
+    """Run sd-cli; if the picture comes out blank, retry once the safest way: overflow-safe
+    scaling, tiled decode and no flash attention."""
+    await sdcpp.run(job, [*args, *(HD_DECODE if hd else [])], steps=steps, expected=expected)
+    if out.exists() and _flat(out):
         out.unlink()
-        await sdcpp.run(job, [*args, *SAFE_SCALE], steps=steps, expected=expected, label="正在重新绘制")
+        safe = [a for a in args if a != "--diffusion-fa"]
+        await sdcpp.run(job, [*safe, *SAFE_SCALE, *HD_DECODE], steps=steps, expected=expected * 1.5, label="正在重新绘制")
     if out.exists() and _flat(out):
         raise JobFailed(tr("生成的图片是空白的，请换个提示词或改用标准清晰度再试"))
 
