@@ -1,96 +1,96 @@
-# TopLocal Studio · 本地创作台
+# TopLocal Studio
 
-在自己的电脑上生成图片、视频、音乐和语音，不需要联网或账号，内容不离开本机。代码以 Apache-2.0 开源。
+**English** | [简体中文](README.zh-CN.md)
 
-*Create images, video, music and speech entirely on your own computer. No account, no cloud.*
+Create images, video, music and speech entirely on your own computer. No internet connection or account needed, and nothing leaves your machine. The code is open source under Apache-2.0.
 
-🌐 官网 / Website：[localaicreator.com](https://localaicreator.com) · ⬇️ 安装包 / Installers：[Patreon](https://www.patreon.com/localai/posts/toplocal-studio-170624611) · ▶️ 演示 / Demo：[1 分钟视频](https://cdn.sci-draw.com/toplocal-studio/promo/promo-zh.mp4) · [1-minute video](https://cdn.sci-draw.com/toplocal-studio/promo/promo-en.mp4)
+🌐 Website: [localaicreator.com](https://localaicreator.com) · ⬇️ Installers: [Patreon](https://www.patreon.com/localai/posts/toplocal-studio-170624611) · ▶️ Demo: [1-minute video](https://cdn.sci-draw.com/toplocal-studio/promo/promo-en.mp4)
 
-| 模块 | 能做什么 | 模型 |
+| Module | What it does | Models |
 | --- | --- | --- |
-| 图片 | 文字生成图片、按描述修改图片 | Z-Image-Turbo，FLUX.2 klein 4B / 9B |
-| 视频 | 文字或图片生成带声音的短视频（3 / 5 / 8 秒） | LTX-2.5 Distilled |
-| 音乐 | 一句话写歌、用自己的歌词、纯音乐；导出动效视频 | ACE-Step 1.5，YuE2（中文精唱），Qwen3-4B 写词 |
-| 语音 | 录音转文字（带 SRT 字幕）、配音、声音克隆 | Qwen3-ASR，SenseVoice，Kokoro，Qwen3-TTS |
+| Image | Text to image; edit a picture with one sentence | Z-Image-Turbo, FLUX.2 klein 4B / 9B |
+| Video | Short clips with sound from text or an image (3 / 5 / 8 s) | LTX-2.5 Distilled |
+| Music | A song from one sentence, from your own lyrics, or instrumental; animated video export | ACE-Step 1.5, YuE2 (Chinese vocals), Qwen3-4B lyric writer |
+| Speech | Transcription with SRT subtitles, text to speech, voice cloning | Qwen3-ASR, SenseVoice, Kokoro, Qwen3-TTS |
 
-安装包包含全部运行环境（Python 和推理引擎）。模型在应用内按需下载：支持断点续传、sha256 校验和国内镜像，下载前会显示模型的许可证。
+The installers include the whole runtime (Python and the inference engines). Models are downloaded inside the app when you need them, with resume, sha256 checks and a China mirror; each model's license is shown before it downloads.
 
-## 系统要求
+## System requirements
 
 | | macOS | Windows |
 | --- | --- | --- |
-| 硬件 | Apple Silicon（M1 及以上） | x64，支持 Vulkan 的显卡（NVIDIA / AMD / Intel） |
-| 内存 | 16 GB 起；视频需要 24 GB 以上 | 16 GB 起；视频需要 24 GB 以上 |
-| 推理引擎 | MLX（图片、视频），audio.cpp Metal | stable-diffusion.cpp、audio.cpp、llama.cpp（Vulkan） |
-| 状态 | 已在 M5 Pro 64 GB 上完整测试 | GitHub Actions 自动构建；已在 RTX 5090 D 上测试，视频为实验功能 |
+| Hardware | Apple Silicon (M1 or newer) | x64 with a Vulkan-capable GPU (NVIDIA / AMD / Intel) |
+| Memory | 16 GB and up; video needs 24 GB or more | 16 GB and up; video needs 24 GB or more |
+| Engines | MLX (image, video), audio.cpp on Metal | stable-diffusion.cpp, audio.cpp, llama.cpp (Vulkan) |
+| Status | Fully tested on an M5 Pro with 64 GB | Built by GitHub Actions; tested on an RTX 5090 D; video is experimental |
 
-Windows 版的已知限制：
+Known limits on Windows:
 
-- 需要安装显卡驱动。驱动会带上 Vulkan 运行库（`vulkan-1.dll`），音乐和语音引擎启动时要用到它。
-- 视频模型的文本编码器来自 Lightricks 官方仓库，需要先在 Hugging Face 同意许可证，再在设置里填写访问令牌。
-- Windows 用户名里有中文时，引擎读取模型的情况还没有验证。
+- A graphics driver must be installed. It provides the Vulkan runtime (`vulkan-1.dll`) that the music and speech engines load at startup.
+- The video model's text encoder comes from Lightricks' official repository: accept its license on Hugging Face first, then enter an access token in Settings.
+- Engines reading models under a Windows user name with Chinese characters have not been verified yet.
 
-应用会按内存档位（16 / 32 / 64 GB）决定开放哪些功能。各模型的速度、内存和质量实测见 [`results/model-selection.md`](results/model-selection.md)。
+The app decides which features to offer by memory class (16 / 32 / 64 GB). Measured speed, memory and quality for each model are in [`results/model-selection.md`](results/model-selection.md).
 
-## 下载
+## Download
 
-两种方式任选：
+Either way works:
 
-- **现成的安装包**：在 [Patreon](https://www.patreon.com/localai/posts/toplocal-studio-170624611) 获取，一次购买，包含 1.x 的全部更新。
-  - macOS：`.dmg`，Apple Silicon，使用 Developer ID 签名并经过苹果公证，下载后可直接打开。
-  - Windows：`setup.exe`，Windows 10 / 11 x64，由 GitHub Actions 构建。安装包暂未做代码签名，SmartScreen 提示时选择"更多信息 → 仍要运行"。
-- **自己编译**：代码完全开源，按下面"开发"和"打包"两节的步骤即可构建出一样的安装包。
+- **Ready-made installers**: get them on [Patreon](https://www.patreon.com/localai/posts/toplocal-studio-170624611). One purchase, all 1.x updates included.
+  - macOS: `.dmg` for Apple Silicon, signed with a Developer ID and notarized by Apple, so it opens right away.
+  - Windows: `setup.exe` for Windows 10 / 11 x64, built by GitHub Actions. The installer is not code-signed yet; if SmartScreen appears, choose "More info → Run anyway".
+- **Build it yourself**: the code is fully open. The "Development" and "Packaging" sections below produce the same installers.
 
-更多介绍、示例和常见问题见官网 [localaicreator.com](https://localaicreator.com)。
+More about the app, examples and FAQ: [localaicreator.com](https://localaicreator.com).
 
-## 开发
+## Development
 
-需要 Node 22、Rust、[uv](https://docs.astral.sh/uv/)。
+Requires Node 22, Rust and [uv](https://docs.astral.sh/uv/).
 
 ```bash
 cd app && npm install
-npx tauri dev          # 桌面窗口，自动启动 Vite 和本地服务
-npm run dev:all        # 只用浏览器：服务在 :4318，页面在 :5173
+npx tauri dev          # desktop window; starts Vite and the local service
+npm run dev:all        # browser only: service on :4318, UI on :5173
 ```
 
-结构：
+Layout:
 
 ```
-app/        Tauri 2 桌面壳 + React 界面
-service/    本地推理服务（Python aiohttp）：任务队列、模型目录、下载器、各模块引擎
-packaging/  macOS / Windows 打包脚本
-results/    模型选型和实测报告
+app/        Tauri 2 desktop shell + React UI
+service/    local inference service (Python aiohttp): job queue, model catalog, downloader, module engines
+packaging/  macOS / Windows packaging scripts
+results/    model selection and benchmark reports
 ```
 
-本地服务只监听 127.0.0.1 的随机端口，并校验桌面壳生成的随机令牌。引擎和模型路径都可以用 `LOCALAI_*` 环境变量覆盖（见 `service/localai_service/config.py`），开发时默认使用这个仓库旁边的引擎和 `models/` 目录。设置 `LOCALAI_DIFFUSION_ENGINE=sdcpp` 可以在 Mac 上走 Windows 的 stable-diffusion.cpp 图片路径。
+The local service listens only on a random port on 127.0.0.1 and checks a random token generated by the desktop shell. Engine and model paths can all be overridden with `LOCALAI_*` environment variables (see `service/localai_service/config.py`); in development the engines next to this repository and the `models/` folder are used. Set `LOCALAI_DIFFUSION_ENGINE=sdcpp` to run the Windows stable-diffusion.cpp image path on a Mac.
 
-界面端到端测试（WebKit，会真实生成内容）：
+End-to-end UI tests (WebKit, with real generations):
 
 ```bash
-npm run dev:all   # 在 app/ 下
+npm run dev:all   # in app/
 uv run --with playwright python app/tests/ui_e2e.py
 ```
 
-## 打包
+## Packaging
 
-**Windows**：推送到 `main` 或打 `v*` 标签时，[`.github/workflows/windows.yml`](.github/workflows/windows.yml) 会：
+**Windows**: on every push to `main` or `v*` tag, [`.github/workflows/windows.yml`](.github/workflows/windows.yml):
 
-1. 用 `packaging/build_windows.ps1` 打包独立 CPython 3.12 和本地服务；
-2. 下载 [`packaging/windows-engines.json`](packaging/windows-engines.json) 里固定版本、带 sha256 的 Vulkan 版引擎；
-3. 运行冒烟测试；
-4. 构建 NSIS 安装包。
+1. packages a standalone CPython 3.12 with the local service (`packaging/build_windows.ps1`);
+2. downloads the Vulkan engines pinned with sha256 in [`packaging/windows-engines.json`](packaging/windows-engines.json);
+3. runs a smoke test;
+4. builds the NSIS installer.
 
-打标签时，安装包会附到 Release 草稿上。
+Every build's installer is uploaded to the CDN (Cloudflare R2); tagged builds are also attached to a draft Release.
 
-**macOS**（本地构建）：
+**macOS** (built locally):
 
 ```bash
 packaging/build_macos.sh
 APPLE_SIGNING_IDENTITY="Developer ID Application: …" NOTARY_PROFILE=<profile> packaging/build_macos.sh
 ```
 
-`packaging/build_runtime.sh` 会打包私有的 CPython 3.12，里面包含本地服务、mflux 和 ltx-2-mlx，不带 PyTorch，另外还有 audio.cpp、静态链接的 llama-completion 和 ffmpeg。
+`packaging/build_runtime.sh` bundles a private CPython 3.12 with the local service, mflux and ltx-2-mlx (no PyTorch), plus audio.cpp, a statically linked llama-completion and ffmpeg.
 
-## 许可证
+## License
 
-代码采用 [Apache-2.0](LICENSE)。打包的引擎和可下载模型各有自己的许可证，见 [NOTICE.md](NOTICE.md)。其中 YuE2、FLUX.2 klein 9B 和 LTX-2.5 限制商业使用。
+The code is licensed under [Apache-2.0](LICENSE). The bundled engines and downloadable models each have their own licenses; see [NOTICE.md](NOTICE.md). YuE2, FLUX.2 klein 9B and LTX-2.5 restrict commercial use.
