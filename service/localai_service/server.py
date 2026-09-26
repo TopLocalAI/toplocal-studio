@@ -85,7 +85,7 @@ async def models(_):
 
 
 # Hosts the UI may open in the system browser (license pages, the project page).
-OPEN_HOSTS = {"huggingface.co", "hf-mirror.com", "github.com", "creativecommons.org"}
+OPEN_HOSTS = {"huggingface.co", "hf-mirror.com", "github.com", "creativecommons.org", "localaicreator.com"}
 
 
 async def open_url(request):

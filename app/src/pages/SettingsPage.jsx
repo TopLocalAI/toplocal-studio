@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowClockwise, CheckCircle, GithubLogo, Key, Laptop, Moon, Sun } from "@phosphor-icons/react";
+import { ArrowClockwise, CheckCircle, GithubLogo, Globe, Key, Laptop, Moon, Sun } from "@phosphor-icons/react";
 import logo from "../assets/logo.svg";
 import { api, openExternal } from "../api";
 import { LANGUAGES, t } from "../i18n";
@@ -8,6 +8,7 @@ import { formatBytes, isDownloading, useModels } from "../hooks/useModels";
 
 const MODULE_LABEL = { ...Object.fromEntries(MODULES.map((m) => [m.id, m.label])), shared: "通用" };
 const REPO_URL = "https://github.com/TopLocalAI/toplocal-studio";
+const SITE_URL = "https://localaicreator.com";
 const TOKEN_URL = "https://huggingface.co/settings/tokens";
 
 // What one module can do on this machine: ready, needs a download, or needs more memory.
@@ -320,9 +321,14 @@ export function SettingsPage({ system, theme, onThemeChange, language, serviceLa
             <span>{t("版本 {version} · Apache-2.0 开源 · 非商业项目", { version: version || "—" })}</span>
             <p>{t("图片、视频、音乐、语音都在这台电脑上生成，不需要账号，也不上传任何内容。")}</p>
           </div>
-          <button type="button" className="button button-secondary" onClick={() => openExternal(REPO_URL)}>
-            <GithubLogo size={17} /> {t("开源主页")}
-          </button>
+          <div className="about-links">
+            <button type="button" className="button button-secondary" onClick={() => openExternal(SITE_URL)}>
+              <Globe size={17} /> {t("官网")}
+            </button>
+            <button type="button" className="button button-secondary" onClick={() => openExternal(REPO_URL)}>
+              <GithubLogo size={17} /> {t("开源主页")}
+            </button>
+          </div>
         </div>
       </div>
     </section>

@@ -1,5 +1,6 @@
 // English UI strings for Settings and Library, keyed by the Chinese source text.
 export default {
+  "官网": "Website",
   // Settings: module status
   "通用": "Shared",
   "需要 {memory} 以上内存": "Needs {memory}+ memory",

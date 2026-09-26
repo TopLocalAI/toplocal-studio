@@ -1700,3 +1700,9 @@ select option {
 .recent-item {
   min-height: 58px;
 }
+
+.about-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
