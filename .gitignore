@@ -4,6 +4,8 @@
 !/.gitignore
 !/.github/
 !/README.md
+!/README.zh-CN.md
+!/DEVELOPMENT.md
 !/LICENSE
 !/NOTICE.md
 !/app/

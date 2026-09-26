@@ -1,96 +1,50 @@
+<div align="center">
+
 # TopLocal Studio · 本地创作台
+
+**属于你自己的 AI 创作台，就在你的电脑上。**
+
+在 Mac 或 Windows 电脑上画图、做视频、写歌、配音。<br>
+离线运行，不上传，不注册，没有积分。
 
 [English](README.md) | **简体中文**
 
-在自己的电脑上生成图片、视频、音乐和语音，不需要联网或账号，内容不离开本机。代码以 Apache-2.0 开源。
+[**⬇️ 下载 macOS / Windows 版**](https://www.patreon.com/localai/posts/toplocal-studio-170624611) · [官网](https://localaicreator.com/zh) · [看 1 分钟演示](https://cdn.sci-draw.com/toplocal-studio/promo/promo-zh.mp4)
 
-🌐 官网：[localaicreator.com](https://localaicreator.com/zh) · ⬇️ 安装包：[Patreon](https://www.patreon.com/localai/posts/toplocal-studio-170624611) · ▶️ 演示：[1 分钟视频](https://cdn.sci-draw.com/toplocal-studio/promo/promo-zh.mp4)
+[![TopLocal Studio 演示](https://cdn.sci-draw.com/toplocal-studio/readme/zh/cover.jpg)](https://cdn.sci-draw.com/toplocal-studio/promo/promo-zh.mp4)
 
-| 模块 | 能做什么 | 模型 |
-| --- | --- | --- |
-| 图片 | 文字生成图片、按描述修改图片 | Z-Image-Turbo，FLUX.2 klein 4B / 9B |
-| 视频 | 文字或图片生成带声音的短视频（3 / 5 / 8 秒） | LTX-2.5 Distilled |
-| 音乐 | 一句话写歌、用自己的歌词、纯音乐；导出动效视频 | ACE-Step 1.5，YuE2（中文精唱），Qwen3-4B 写词 |
-| 语音 | 录音转文字（带 SRT 字幕）、配音、声音克隆 | Qwen3-ASR，SenseVoice，Kokoro，Qwen3-TTS |
+</div>
 
-安装包包含全部运行环境（Python 和推理引擎）。模型在应用内按需下载：支持断点续传、sha256 校验和国内镜像，下载前会显示模型的许可证。
+## 能做什么
 
-## 系统要求
+**🖼 图片**：一句话画图，图里的中英文字都能写对；再一句话就能改图。
 
-| | macOS | Windows |
-| --- | --- | --- |
-| 硬件 | Apple Silicon（M1 及以上） | x64，支持 Vulkan 的显卡（NVIDIA / AMD / Intel） |
-| 内存 | 16 GB 起；视频需要 24 GB 以上 | 16 GB 起；视频需要 24 GB 以上 |
-| 推理引擎 | MLX（图片、视频），audio.cpp Metal | stable-diffusion.cpp、audio.cpp、llama.cpp（Vulkan） |
-| 状态 | 已在 M5 Pro 64 GB 上完整测试 | GitHub Actions 自动构建；已在 RTX 5090 D 上测试，视频为实验功能 |
+![一句话画图，一句话改图](https://cdn.sci-draw.com/toplocal-studio/readme/zh/image-edit.jpg)
 
-Windows 版的已知限制：
+**🎬 视频**：一句话或一张图，生成带声音的短视频。
 
-- 需要安装显卡驱动。驱动会带上 Vulkan 运行库（`vulkan-1.dll`），音乐和语音引擎启动时要用到它。
-- 视频模型的文本编码器来自 Lightricks 官方仓库，需要先在 Hugging Face 同意许可证，再在设置里填写访问令牌。
-- Windows 用户名里有中文时，引擎读取模型的情况还没有验证。
+![让图片动起来](https://cdn.sci-draw.com/toplocal-studio/readme/zh/video.jpg)
 
-应用会按内存档位（16 / 32 / 64 GB）决定开放哪些功能。各模型的速度、内存和质量实测见 [`results/model-selection.md`](results/model-selection.md)。
+**🎵 音乐**：一句话写一首完整的歌，作词、作曲、演唱一次完成；也可以用自己的歌词。
 
-## 下载
+![一句话写一首歌](https://cdn.sci-draw.com/toplocal-studio/readme/zh/music.jpg)
 
-两种方式任选：
+**🎙 语音**：自然的中英文配音，几秒录音就能克隆声音，录音和视频一键转文字和字幕。
 
-- **现成的安装包**：在 [Patreon](https://www.patreon.com/localai/posts/toplocal-studio-170624611) 获取，一次购买，包含 1.x 的全部更新。
-  - macOS：`.dmg`，Apple Silicon，使用 Developer ID 签名并经过苹果公证，下载后可直接打开。
-  - Windows：`setup.exe`，Windows 10 / 11 x64，由 GitHub Actions 构建。安装包暂未做代码签名，SmartScreen 提示时选择"更多信息 → 仍要运行"。
-- **自己编译**：代码完全开源，按下面"开发"和"打包"两节的步骤即可构建出一样的安装包。
+## 为什么用它
 
-更多介绍、示例和常见问题见官网 [localaicreator.com](https://localaicreator.com)。
+- **隐私**：提示词、文件和作品都不离开你的电脑。
+- **离线**：模型下载一次，之后断网也能创作。
+- **没有订阅和积分**：电脑能跑多少就生成多少。
+- **普通电脑就能用**：16 GB 内存的 Apple Silicon Mac，或带独立显卡的 Windows 电脑。
+- **开源模型**：Z-Image、FLUX.2 klein、LTX-2.5、ACE-Step、YuE、Kokoro、Qwen3-TTS、Qwen3-ASR，一键下载。
 
-## 开发
+## 获取
 
-需要 Node 22、Rust、[uv](https://docs.astral.sh/uv/)。
+**最省事**：[下载安装包](https://www.patreon.com/localai/posts/toplocal-studio-170624611)，macOS 版已通过苹果签名和公证，Windows 版同样提供。打开软件，选择模型，就能开始创作，包含 1.x 的全部更新。
 
-```bash
-cd app && npm install
-npx tauri dev          # 桌面窗口，自动启动 Vite 和本地服务
-npm run dev:all        # 只用浏览器：服务在 :4318，页面在 :5173
-```
-
-结构：
-
-```
-app/        Tauri 2 桌面壳 + React 界面
-service/    本地推理服务（Python aiohttp）：任务队列、模型目录、下载器、各模块引擎
-packaging/  macOS / Windows 打包脚本
-results/    模型选型和实测报告
-```
-
-本地服务只监听 127.0.0.1 的随机端口，并校验桌面壳生成的随机令牌。引擎和模型路径都可以用 `LOCALAI_*` 环境变量覆盖（见 `service/localai_service/config.py`），开发时默认使用这个仓库旁边的引擎和 `models/` 目录。设置 `LOCALAI_DIFFUSION_ENGINE=sdcpp` 可以在 Mac 上走 Windows 的 stable-diffusion.cpp 图片路径。
-
-界面端到端测试（WebKit，会真实生成内容）：
-
-```bash
-npm run dev:all   # 在 app/ 下
-uv run --with playwright python app/tests/ui_e2e.py
-```
-
-## 打包
-
-**Windows**：推送到 `main` 或打 `v*` 标签时，[`.github/workflows/windows.yml`](.github/workflows/windows.yml) 会：
-
-1. 用 `packaging/build_windows.ps1` 打包独立 CPython 3.12 和本地服务；
-2. 下载 [`packaging/windows-engines.json`](packaging/windows-engines.json) 里固定版本、带 sha256 的 Vulkan 版引擎；
-3. 运行冒烟测试；
-4. 构建 NSIS 安装包。
-
-每次构建的安装包会上传到 CDN（Cloudflare R2）；打标签时还会附到 Release 草稿上。
-
-**macOS**（本地构建）：
-
-```bash
-packaging/build_macos.sh
-APPLE_SIGNING_IDENTITY="Developer ID Application: …" NOTARY_PROFILE=<profile> packaging/build_macos.sh
-```
-
-`packaging/build_runtime.sh` 会打包私有的 CPython 3.12，里面包含本地服务、mflux 和 ltx-2-mlx，不带 PyTorch，另外还有 audio.cpp、静态链接的 llama-completion 和 ffmpeg。
+**从源码运行**：代码全部在这里，自己编译和运行请看[开发说明](DEVELOPMENT.md)（英文）。
 
 ## 许可证
 
-代码采用 [Apache-2.0](LICENSE)。打包的引擎和可下载模型各有自己的许可证，见 [NOTICE.md](NOTICE.md)。其中 YuE2、FLUX.2 klein 9B 和 LTX-2.5 限制商业使用。
+Apache-2.0。每个可下载的模型有各自的许可证，软件里下载前会显示。

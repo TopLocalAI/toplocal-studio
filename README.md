@@ -1,96 +1,50 @@
+<div align="center">
+
 # TopLocal Studio
+
+**Your own AI studio, on your own computer.**
+
+Make images, videos, songs and voiceovers on your Mac or Windows PC.<br>
+Offline, private, no account, no credits.
 
 **English** | [简体中文](README.zh-CN.md)
 
-Create images, video, music and speech entirely on your own computer. No internet connection or account needed, and nothing leaves your machine. The code is open source under Apache-2.0.
+[**⬇️ Download for macOS & Windows**](https://www.patreon.com/localai/posts/toplocal-studio-170624611) · [Website](https://localaicreator.com) · [Watch the 1-minute demo](https://cdn.sci-draw.com/toplocal-studio/promo/promo-en.mp4)
 
-🌐 Website: [localaicreator.com](https://localaicreator.com) · ⬇️ Installers: [Patreon](https://www.patreon.com/localai/posts/toplocal-studio-170624611) · ▶️ Demo: [1-minute video](https://cdn.sci-draw.com/toplocal-studio/promo/promo-en.mp4)
+[![TopLocal Studio — watch the demo](https://cdn.sci-draw.com/toplocal-studio/patreon/demo-thumb.jpg)](https://cdn.sci-draw.com/toplocal-studio/promo/promo-en.mp4)
 
-| Module | What it does | Models |
-| --- | --- | --- |
-| Image | Text to image; edit a picture with one sentence | Z-Image-Turbo, FLUX.2 klein 4B / 9B |
-| Video | Short clips with sound from text or an image (3 / 5 / 8 s) | LTX-2.5 Distilled |
-| Music | A song from one sentence, from your own lyrics, or instrumental; animated video export | ACE-Step 1.5, YuE2 (Chinese vocals), Qwen3-4B lyric writer |
-| Speech | Transcription with SRT subtitles, text to speech, voice cloning | Qwen3-ASR, SenseVoice, Kokoro, Qwen3-TTS |
+</div>
 
-The installers include the whole runtime (Python and the inference engines). Models are downloaded inside the app when you need them, with resume, sha256 checks and a China mirror; each model's license is shown before it downloads.
+## What you can make
 
-## System requirements
+**🖼 Images** — Describe it in one sentence; text inside the picture comes out right. Edit any picture with one more sentence.
 
-| | macOS | Windows |
-| --- | --- | --- |
-| Hardware | Apple Silicon (M1 or newer) | x64 with a Vulkan-capable GPU (NVIDIA / AMD / Intel) |
-| Memory | 16 GB and up; video needs 24 GB or more | 16 GB and up; video needs 24 GB or more |
-| Engines | MLX (image, video), audio.cpp on Metal | stable-diffusion.cpp, audio.cpp, llama.cpp (Vulkan) |
-| Status | Fully tested on an M5 Pro with 64 GB | Built by GitHub Actions; tested on an RTX 5090 D; video is experimental |
+![One sentence to make it, one to edit it](https://cdn.sci-draw.com/toplocal-studio/patreon/image-edit.jpg)
 
-Known limits on Windows:
+**🎬 Video** — Turn a sentence or a photo into a short clip, with sound.
 
-- A graphics driver must be installed. It provides the Vulkan runtime (`vulkan-1.dll`) that the music and speech engines load at startup.
-- The video model's text encoder comes from Lightricks' official repository: accept its license on Hugging Face first, then enter an access token in Settings.
-- Engines reading models under a Windows user name with Chinese characters have not been verified yet.
+![A still image brought to life](https://cdn.sci-draw.com/toplocal-studio/patreon/video.jpg)
 
-The app decides which features to offer by memory class (16 / 32 / 64 GB). Measured speed, memory and quality for each model are in [`results/model-selection.md`](results/model-selection.md).
+**🎵 Music** — A whole song with lyrics and vocals from one sentence, or from your own lyrics.
 
-## Download
+![A song from one sentence](https://cdn.sci-draw.com/toplocal-studio/patreon/music.jpg)
 
-Either way works:
+**🎙 Voice** — Natural voiceovers in English and Chinese, voice cloning from a few seconds of audio, and transcription with subtitles.
 
-- **Ready-made installers**: get them on [Patreon](https://www.patreon.com/localai/posts/toplocal-studio-170624611). One purchase, all 1.x updates included.
-  - macOS: `.dmg` for Apple Silicon, signed with a Developer ID and notarized by Apple, so it opens right away.
-  - Windows: `setup.exe` for Windows 10 / 11 x64, built by GitHub Actions. The installer is not code-signed yet; if SmartScreen appears, choose "More info → Run anyway".
-- **Build it yourself**: the code is fully open. The "Development" and "Packaging" sections below produce the same installers.
+## Why people use it
 
-More about the app, examples and FAQ: [localaicreator.com](https://localaicreator.com).
+- **Private** — your prompts, files and results never leave your computer.
+- **Offline** — download a model once, then create without internet.
+- **No subscription, no credits** — make as much as your computer can.
+- **Runs on normal computers** — Apple Silicon Macs with 16 GB, or Windows PCs with a graphics card.
+- **Open models** — Z-Image, FLUX.2 klein, LTX-2.5, ACE-Step, YuE, Kokoro, Qwen3-TTS, Qwen3-ASR, one click to download.
 
-## Development
+## Get it
 
-Requires Node 22, Rust and [uv](https://docs.astral.sh/uv/).
+**Easiest:** [download the installer](https://www.patreon.com/localai/posts/toplocal-studio-170624611) for macOS (signed and notarized) or Windows, open it, pick your models, and start creating. Includes all 1.x updates.
 
-```bash
-cd app && npm install
-npx tauri dev          # desktop window; starts Vite and the local service
-npm run dev:all        # browser only: service on :4318, UI on :5173
-```
-
-Layout:
-
-```
-app/        Tauri 2 desktop shell + React UI
-service/    local inference service (Python aiohttp): job queue, model catalog, downloader, module engines
-packaging/  macOS / Windows packaging scripts
-results/    model selection and benchmark reports
-```
-
-The local service listens only on a random port on 127.0.0.1 and checks a random token generated by the desktop shell. Engine and model paths can all be overridden with `LOCALAI_*` environment variables (see `service/localai_service/config.py`); in development the engines next to this repository and the `models/` folder are used. Set `LOCALAI_DIFFUSION_ENGINE=sdcpp` to run the Windows stable-diffusion.cpp image path on a Mac.
-
-End-to-end UI tests (WebKit, with real generations):
-
-```bash
-npm run dev:all   # in app/
-uv run --with playwright python app/tests/ui_e2e.py
-```
-
-## Packaging
-
-**Windows**: on every push to `main` or `v*` tag, [`.github/workflows/windows.yml`](.github/workflows/windows.yml):
-
-1. packages a standalone CPython 3.12 with the local service (`packaging/build_windows.ps1`);
-2. downloads the Vulkan engines pinned with sha256 in [`packaging/windows-engines.json`](packaging/windows-engines.json);
-3. runs a smoke test;
-4. builds the NSIS installer.
-
-Every build's installer is uploaded to the CDN (Cloudflare R2); tagged builds are also attached to a draft Release.
-
-**macOS** (built locally):
-
-```bash
-packaging/build_macos.sh
-APPLE_SIGNING_IDENTITY="Developer ID Application: …" NOTARY_PROFILE=<profile> packaging/build_macos.sh
-```
-
-`packaging/build_runtime.sh` bundles a private CPython 3.12 with the local service, mflux and ltx-2-mlx (no PyTorch), plus audio.cpp, a statically linked llama-completion and ffmpeg.
+**From source:** the code is all here. See the [development guide](DEVELOPMENT.md) to build and run it yourself.
 
 ## License
 
-The code is licensed under [Apache-2.0](LICENSE). The bundled engines and downloadable models each have their own licenses; see [NOTICE.md](NOTICE.md). YuE2, FLUX.2 klein 9B and LTX-2.5 restrict commercial use.
+Apache-2.0. Each downloadable model has its own license, shown in the app before you download it.
