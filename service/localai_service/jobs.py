@@ -6,6 +6,7 @@ job.json snapshot, which is also what the library view lists after a restart.
 import asyncio
 import json
 import os
+import re
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -14,6 +15,7 @@ from typing import Awaitable, Callable
 
 from . import config, errors, procs
 from .i18n import tr
+from .i18n_en import EN
 
 STALL_SECONDS = 600  # no engine output for this long means it hangs
 
@@ -53,6 +55,7 @@ class Job:
     result: dict | None = None
     error: str | None = None
     title: str = ""
+    title_template: list | None = None  # [source text, values]: re-translated whenever it is shown
     _proc: asyncio.subprocess.Process | None = None
     _cancelled: bool = False
 
@@ -60,13 +63,19 @@ class Job:
     def dir(self) -> Path:
         return config.LIBRARY_DIR / self.id
 
+    def set_title(self, source: str, /, **values) -> None:
+        """A title with a translatable frame ("Edit · {text}"): shown in the current UI language."""
+        self.title_template = [source, values]
+        self.title = tr(source, **values)
+
     def public(self) -> dict:
         end = self.finished or time.time()
         return {
             "id": self.id,
             "module": self.module,
             "task": self.task,
-            "title": self.title,
+            "title": tr(self.title_template[0], **self.title_template[1]) if self.title_template else self.title,
+            "titleTemplate": self.title_template,
             "status": self.status,
             "progress": round(self.progress, 1),
             "label": self.label,
@@ -220,6 +229,26 @@ class JobManager:
                 self._finish(job, "error", label=tr("生成失败"), error=errors.friendly(job.module, job.dir, exc))
 
 
+# Title frames the engines use; older jobs saved only the finished title in one language.
+TITLE_FRAMES = ["编辑 · {text}", "配音 · {text}", "纯音乐 · {text}", "动起来 · {text}", "{name} · 文字稿", "{title} · 动效视频"]
+
+
+def localized_title(data: dict) -> str:
+    """The job's title in the current UI language."""
+    template = data.get("titleTemplate")
+    if template:
+        return tr(template[0], **template[1])
+    title = data.get("title") or ""
+    for frame in TITLE_FRAMES:
+        for form in {frame, EN.get(frame, frame)}:
+            pattern = "^" + re.escape(form).replace(re.escape("{text}"), "(?P<text>.*)").replace(
+                re.escape("{name}"), "(?P<name>.*)").replace(re.escape("{title}"), "(?P<title>.*)") + "$"
+            m = re.match(pattern, title, re.S)
+            if m:
+                return tr(frame, **m.groupdict())
+    return title
+
+
 def library(module: str | None = None) -> list[dict]:
     items = []
     if not config.LIBRARY_DIR.exists():
@@ -232,5 +261,6 @@ def library(module: str | None = None) -> list[dict]:
         if data.get("module") == "shared":  # helper jobs (prompt polishing) are not works
             continue
         if data.get("status") == "done" and (module is None or data.get("module") == module):
+            data["title"] = localized_title(data)
             items.append(data)
     return sorted(items, key=lambda d: d.get("created", 0), reverse=True)

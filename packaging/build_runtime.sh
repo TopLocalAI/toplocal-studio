@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Build the self-contained runtime bundled into the macOS app:
 #   generated/runtime/python   standalone CPython 3.12 + service + mflux + ltx-2-mlx (no PyTorch)
-#   generated/engines/         audiocpp_cli (+ VAD assets), llama-completion, sd-cli, ffmpeg
+#   generated/engines/         audiocpp_cli (+ VAD assets), llama-completion, ffmpeg
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -51,9 +51,6 @@ mkdir -p "$OUT/engines/audiocpp/assets/framework/models"
 cp "$AC/build/macos-metal-release/bin/audiocpp_cli" "$OUT/engines/audiocpp/"
 cp -R "$AC/assets/framework/models/silero_vad" "$OUT/engines/audiocpp/assets/framework/models/"
 cp "$ROOT/engines/llama.cpp/build-static/bin/llama-completion" "$OUT/engines/"
-# stable-diffusion.cpp (Metal, statically linked): Qwen-Image 2.1 runs on it on the Mac too.
-mkdir -p "$OUT/engines/sdcpp"
-cp "$ROOT/image/stable-diffusion.cpp/build/bin/sd-cli" "$OUT/engines/sdcpp/"
 FF="$("$PY" -c 'import imageio_ffmpeg; print(imageio_ffmpeg.get_ffmpeg_exe())' 2>/dev/null || true)"
 if [ -z "$FF" ]; then
   "${PIP[@]}" imageio-ffmpeg

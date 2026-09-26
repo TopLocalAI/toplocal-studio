@@ -83,7 +83,6 @@ def _prepare_source(src, dest, max_pixels=1024 * 1024, multiple=16) -> tuple[int
 
 
 KLEIN = {"image.klein4b": "flux2-klein-4b", "image.klein9b": "flux2-klein-9b"}  # model id → mflux base model
-QWEN = "image.qwen21"  # stable-diffusion.cpp on every platform; sides must be multiples of 32
 
 
 def _sdcpp_model(model_id: str) -> list:
@@ -128,20 +127,17 @@ async def generate(job: Job) -> dict:
     requested = p.get("model") or ("image.klein4b" if p.get("quality") == "fast" else None)
     model_id = catalog.task_model("image.generate", requested, system.memory_gb())
     klein = model_id in KLEIN
-    qwen = model_id == QWEN
     if not catalog.installed(model_id):
         raise JobFailed(tr("图片模型未安装，请在设置里下载"))
     job.title = text[:16]
     job.params = {**p, "seed": seed, "model": model_id}
     out = job.dir / "image.png"
-    if config.DIFFUSION_ENGINE == "sdcpp" or qwen:
-        steps = 4 if klein or qwen else 8
-        if qwen:
-            width, height = width // 32 * 32, height // 32 * 32
-        expected = 80 if qwen else 20 if model_id == "image.klein4b" else 40
+    if config.DIFFUSION_ENGINE == "sdcpp":
+        steps = 4 if klein else 8
+        expected = 20 if model_id == "image.klein4b" else 40
         job.dir.mkdir(parents=True, exist_ok=True)
         await _run_sdcpp_checked(job, [*_sdcpp_model(model_id), "--cfg-scale", "1.0", "--steps", steps,
-                                       *(["--sampling-method", "euler"] if klein or qwen else []),
+                                       *(["--sampling-method", "euler"] if klein else []),
                                        "-p", _prompt(text, styles), "-W", width, "-H", height, "-s", seed, "-o", out],
                                  out, hd=hd, steps=steps, expected=expected * slow)
         if not out.exists():
@@ -172,23 +168,20 @@ async def edit(job: Job) -> dict:
     # klein 9B edits best but needs the 24–32 GB class; 16 GB machines use klein 4B.
     model_id = catalog.task_model("image.edit", p.get("model"), system.memory_gb())
     big = model_id == "image.klein9b"
-    qwen = model_id == QWEN
     if not catalog.installed(model_id):
         raise JobFailed(tr("图片编辑模型未安装，请在设置里下载"))
     seed = int(p.get("seed") or random.randint(1, 2**31 - 1))
-    job.title = tr("编辑 · {text}", text=text[:12])
+    job.set_title("编辑 · {text}", text=text[:12])
     job.params = {**p, "seed": seed, "model": model_id}
     job.dir.mkdir(parents=True, exist_ok=True)
     src = job.dir / "source.png"
     hd = _hd(p)
     slow = HD_TIME if hd else 1
-    width, height = _prepare_source(source, src, max_pixels=(1440 * 1440) if hd else 1024 * 1024,
-                                    multiple=32 if qwen else 16)
+    width, height = _prepare_source(source, src, max_pixels=(1440 * 1440) if hd else 1024 * 1024)
     out = job.dir / "image.png"
-    if config.DIFFUSION_ENGINE == "sdcpp" or qwen:
-        vision = ["--llm_vision", catalog.part(model_id, "vision")] if qwen else []
-        expected = 100 if qwen else 60 if big else 30
-        await _run_sdcpp_checked(job, [*_sdcpp_model(model_id), *vision, "-r", src, "--cfg-scale", "1.0", "--steps", 4,
+    if config.DIFFUSION_ENGINE == "sdcpp":
+        expected = 60 if big else 30
+        await _run_sdcpp_checked(job, [*_sdcpp_model(model_id), "-r", src, "--cfg-scale", "1.0", "--steps", 4,
                                        "--sampling-method", "euler", "-p", text, "-W", width, "-H", height, "-s", seed,
                                        "-o", out], out, hd=hd, steps=4, expected=expected * slow)
         if not out.exists():

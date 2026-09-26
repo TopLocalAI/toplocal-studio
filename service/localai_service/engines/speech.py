@@ -92,7 +92,7 @@ async def transcribe(job: Job) -> dict:
     model = catalog.model_path(model_id)
     if model is None:
         raise JobFailed(tr("语音识别模型未安装，请在设置里下载"))
-    job.title = tr("{name} · 文字稿", name=Path(p.get("sourceName") or source.name).stem[:20])
+    job.set_title("{name} · 文字稿", name=Path(p.get("sourceName") or source.name).stem[:20])
     job.save()
 
     job.update(3, tr("正在读取音频"))
@@ -197,7 +197,7 @@ async def synthesize(job: Job) -> dict:
     if len(text) > 5000:
         raise JobFailed(tr("一次最多朗读 5000 字，请分段生成"))
     voice = p.get("voice") or {}
-    job.title = tr("配音 · {text}", text=text[:14])
+    job.set_title("配音 · {text}", text=text[:14])
     job.save()
     wav = job.dir / "speech.wav"
     has_latin = bool(re.search(r"[A-Za-z]{2,}", text))

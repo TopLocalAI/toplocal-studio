@@ -78,7 +78,7 @@ async def generate(job: Job) -> dict:
             im = im.convert("RGB")
             aspect = im.width / im.height
             im.save(first)
-        job.title = tr("动起来 · {text}", text=text[:12])
+        job.set_title("动起来 · {text}", text=text[:12])
     width, height = _size(aspect, PIXELS[resolution])
     job.save()
     out = job.dir / "video.mp4"

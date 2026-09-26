@@ -114,26 +114,6 @@ def image_generate(page):
     page.screenshot(path=SHOTS / "image-result.png")
 
 
-@step("图片-Qwen-Image 2.1 生成与改图")
-def image_qwen(page):
-    nav(page, "图片")
-    page.get_by_role("tab", name="生成").click()
-    here(page, "#img-text").fill("一张复古电影海报，标题写着“长安夜话”，唐代长安城夜景，灯笼与飞檐")
-    pick_model(page, "Qwen-Image 2.1")
-    page.get_by_role("radio", name="3:4").click()
-    page.get_by_role("radio", name="标准").first.click()
-    page.get_by_role("button", name="生成图片").click()
-    wait_job(page)
-    expect(here(page, ".result-image")).to_be_visible()
-    page.get_by_role("button", name="编辑这张").click()
-    here(page, "#img-edit").fill("把标题“长安夜话”改成“洛阳花开”")
-    pick_model(page, "Qwen-Image 2.1")
-    page.get_by_role("button", name="开始修改").click()
-    wait_job(page)
-    expect(here(page, ".result-image")).to_be_visible()
-    page.screenshot(path=SHOTS / "image-qwen-edit.png")
-
-
 @step("图片-高清 16:9")
 def image_hd(page):
     nav(page, "图片")
@@ -422,7 +402,7 @@ def main() -> int:
                  image_to_video, video_generate, speech_tts, speech_asr, library, dark_mode]
         if os.environ.get("UI_FULL") == "1":  # every mode; about 20 extra minutes of generation
             suite[-2:-2] = [music_prompt, music_instrumental, music_chinese, image_standard, image_edit_run,
-                            image_qwen, image_hd, video_text, video_720, speech_mixed, speech_clone, speech_asr_modes,
+                            image_hd, video_text, video_720, speech_mixed, speech_clone, speech_asr_modes,
                             example_image, example_music, example_asr, example_tts]
         for test in suite:
             test(page)

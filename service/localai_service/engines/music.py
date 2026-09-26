@@ -83,7 +83,10 @@ async def generate(job: Job) -> dict:
     else:
         job.update(3, tr("正在写歌词"))
         lyrics = await llm.write_lyrics(job, text, styles, seed)
-    job.title = tr("纯音乐 · {text}", text=text[:10]) if instrumental else _title(lyrics, description)
+    if instrumental:
+        job.set_title("纯音乐 · {text}", text=text[:10])
+    else:
+        job.title = _title(lyrics, description)
     job.params = {**p, "seed": seed, "lyrics": lyrics}
     job.save()
 
@@ -134,7 +137,7 @@ async def export_video(job: Job) -> dict:
         title = json.loads((source_dir / "job.json").read_text(encoding="utf-8")).get("title") or tr("歌曲")
     except (OSError, ValueError):
         title = tr("歌曲")
-    job.title = tr("{title} · 动效视频", title=title)
+    job.set_title("{title} · 动效视频", title=title)
     out = job.dir / "video.mp4"
     await media.export_visual_video(job, audio, str(job.params.get("visual", "flow")), out)
     return {"video": "video.mp4", "duration": await media.probe_duration(out)}
