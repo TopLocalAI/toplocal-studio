@@ -17,19 +17,19 @@ Offline, private, no account, no credits.
 
 ## What you can make
 
-**🖼 Images** — Describe it in one sentence; text inside the picture comes out right. Edit any picture with one more sentence.
+**🖼 [Images](https://localaiimage.com/)** — Describe it in one sentence; text inside the picture comes out right. Edit any picture with one more sentence.
 
 ![One sentence to make it, one to edit it](https://cdn.sci-draw.com/toplocal-studio/patreon/image-edit.jpg)
 
-**🎬 Video** — Turn a sentence or a photo into a short clip, with sound.
+**🎬 [Video](https://localaivideo.com/)** — Turn a sentence or a photo into a short clip, with sound.
 
 ![A still image brought to life](https://cdn.sci-draw.com/toplocal-studio/patreon/video.jpg)
 
-**🎵 Music** — A whole song with lyrics and vocals from one sentence, or from your own lyrics.
+**🎵 [Music](https://localaimusic.com/)** — A whole song with lyrics and vocals from one sentence, or from your own lyrics.
 
 ![A song from one sentence](https://cdn.sci-draw.com/toplocal-studio/patreon/music.jpg)
 
-**🎙 Voice** — Natural voiceovers in English and Chinese, voice cloning from a few seconds of audio, and transcription with subtitles.
+**🎙 [Voice & audio](https://localaiaudio.com/)** — Natural voiceovers in English and Chinese, voice cloning from a few seconds of audio, and transcription with subtitles.
 
 ## Why people use it
 

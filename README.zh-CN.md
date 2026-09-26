@@ -17,19 +17,19 @@
 
 ## 能做什么
 
-**🖼 图片**：一句话画图，图里的中英文字都能写对；再一句话就能改图。
+**🖼 [图片](https://localaiimage.com/)**：一句话画图，图里的中英文字都能写对；再一句话就能改图。
 
 ![一句话画图，一句话改图](https://cdn.sci-draw.com/toplocal-studio/readme/zh/image-edit.jpg)
 
-**🎬 视频**：一句话或一张图，生成带声音的短视频。
+**🎬 [视频](https://localaivideo.com/)**：一句话或一张图，生成带声音的短视频。
 
 ![让图片动起来](https://cdn.sci-draw.com/toplocal-studio/readme/zh/video.jpg)
 
-**🎵 音乐**：一句话写一首完整的歌，作词、作曲、演唱一次完成；也可以用自己的歌词。
+**🎵 [音乐](https://localaimusic.com/)**：一句话写一首完整的歌，作词、作曲、演唱一次完成；也可以用自己的歌词。
 
 ![一句话写一首歌](https://cdn.sci-draw.com/toplocal-studio/readme/zh/music.jpg)
 
-**🎙 语音**：自然的中英文配音，几秒录音就能克隆声音，录音和视频一键转文字和字幕。
+**🎙 [语音](https://localaiaudio.com/)**：自然的中英文配音，几秒录音就能克隆声音，录音和视频一键转文字和字幕。
 
 ## 为什么用它
 
