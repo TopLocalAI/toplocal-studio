@@ -64,6 +64,22 @@ MODELS = [
      "license": "Apache-2.0"},
 ]
 
+# Qwen-Image 2.1 (Viggle turbo v0.2.1, 6 steps, GGUF) runs on stable-diffusion.cpp on every
+# platform: the slow, high-quality text-to-image option, about 2 minutes per image on an M5 Pro.
+QWEN21 = {
+    "id": "image.qwen21", "short": "Qwen-Image 2.1", "module": "image", "name": "Qwen-Image 2.1 Turbo",
+    "engine": "stable-diffusion.cpp",
+    "sources": [{"repo": "Abiray/Qwen-Image-2.1-viggle-turbo-v0.2.1-6step-GGUF", "include": r"^qwen_image_2\.1_turbo_Q4_K_M\.gguf$", "dest": "image/qwen21/v0.2.1"},
+                {"repo": "Comfy-Org/Qwen-Image-2.1", "sub": "vae", "include": r"^qwen_image_2\.1_vae_bf16\.safetensors$", "dest": "image/qwen21"},
+                {"repo": "Qwen/Qwen3-VL-8B-Instruct-GGUF", "include": r"^Qwen3VL-8B-Instruct-Q4_K_M\.gguf$", "dest": "image/qwen21"}],
+    "parts": {"diffusion": "image/qwen21/v0.2.1/qwen_image_2.1_turbo_Q4_K_M.gguf",
+              "vae": "image/qwen21/qwen_image_2.1_vae_bf16.safetensors",
+              "llm": "image/qwen21/Qwen3VL-8B-Instruct-Q4_K_M.gguf"},
+    "sizeBytes": int(9.9 * GB), "license": "Qwen Research License",
+    "licenseUrl": "https://huggingface.co/Qwen/Qwen-Image-2.1",
+    "licenseNote": "Qwen-Image 2.1 采用通义千问研究许可证：仅限研究和非商业用途。",
+}
+
 # Image and video models exist per diffusion engine under the same ids, so the UI and the
 # feature list do not care which engine runs them.
 MLX_MODELS = [
@@ -123,7 +139,7 @@ SDCPP_MODELS = [
      "licenseNote": _LTX_NOTE + "文本编码器和解码器来自 Lightricks 官方仓库：请先登录 Hugging Face 同意许可证，并在设置里填写访问令牌。"},
 ]
 
-MODELS += MLX_MODELS if config.DIFFUSION_ENGINE == "mlx" else SDCPP_MODELS
+MODELS += [*(MLX_MODELS if config.DIFFUSION_ENGINE == "mlx" else SDCPP_MODELS), QWEN21]
 
 # Features the UI offers. `minTier` is the memory class that can run them (see system.tier).
 FEATURES = [
@@ -148,6 +164,7 @@ TASKS = {
         {"model": "image.zimage", "strength": "画质细腻，中英文字写得最准", "speed": "约 40 秒"},
         {"model": "image.klein4b", "strength": "速度最快，适合快速出草图，写字较弱", "speed": "约 15 秒"},
         {"model": "image.klein9b", "strength": "质感和细节更好，适合人像和写实场景", "speed": "约 40 秒", "minTier": "32"},
+        {"model": "image.qwen21", "strength": "画质最高，光影和细节最真实，书法字最好（较慢，仅限非商用）", "speed": "约 2 分钟", "minTier": "32"},
     ],
     "image.edit": [
         {"model": "image.klein9b", "strength": "改图最准，原图细节保留最好", "speed": "约 40 秒", "minTier": "32"},
