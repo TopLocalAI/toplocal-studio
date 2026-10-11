@@ -64,19 +64,19 @@ MODELS = [
      "license": "Apache-2.0"},
 ]
 
-# Qwen-Image 2.1 (Viggle turbo v0.2.1, 6 steps, GGUF) runs on stable-diffusion.cpp on every
+# Qwen-Image 2.1 Turbo (Qwen's own 8-step distillation, AtomicChat GGUF) runs on stable-diffusion.cpp on every
 # platform: the slow, high-quality text-to-image option, about 2 minutes per image on an M5 Pro.
 QWEN21 = {
     "id": "image.qwen21", "short": "Qwen-Image 2.1", "module": "image", "name": "Qwen-Image 2.1 Turbo",
     "engine": "stable-diffusion.cpp",
-    "sources": [{"repo": "Abiray/Qwen-Image-2.1-viggle-turbo-v0.2.1-6step-GGUF", "include": r"^qwen_image_2\.1_turbo_Q4_K_M\.gguf$", "dest": "image/qwen21/v0.2.1"},
+    "sources": [{"repo": "AtomicChat/Qwen-Image-2.1-Turbo-GGUF", "include": r"^Qwen-Image-2\.1-Turbo-AD-Q4_K\.gguf$", "dest": "image/qwen21/turbo"},
                 {"repo": "Comfy-Org/Qwen-Image-2.1", "sub": "vae", "include": r"^qwen_image_2\.1_vae_bf16\.safetensors$", "dest": "image/qwen21"},
                 {"repo": "Qwen/Qwen3-VL-8B-Instruct-GGUF", "include": r"^Qwen3VL-8B-Instruct-Q4_K_M\.gguf$", "dest": "image/qwen21"}],
-    "parts": {"diffusion": "image/qwen21/v0.2.1/qwen_image_2.1_turbo_Q4_K_M.gguf",
+    "parts": {"diffusion": "image/qwen21/turbo/Qwen-Image-2.1-Turbo-AD-Q4_K.gguf",
               "vae": "image/qwen21/qwen_image_2.1_vae_bf16.safetensors",
               "llm": "image/qwen21/Qwen3VL-8B-Instruct-Q4_K_M.gguf"},
     "sizeBytes": int(9.9 * GB), "license": "Qwen Research License",
-    "licenseUrl": "https://huggingface.co/Qwen/Qwen-Image-2.1",
+    "licenseUrl": "https://huggingface.co/Qwen/Qwen-Image-2.1-Turbo",
     "licenseNote": "Qwen-Image 2.1 采用通义千问研究许可证：仅限研究和非商业用途。",
 }
 

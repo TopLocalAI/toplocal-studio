@@ -84,8 +84,8 @@ def _prepare_source(src, dest, max_pixels=1024 * 1024, multiple=16) -> tuple[int
 
 KLEIN = {"image.klein4b": "flux2-klein-4b", "image.klein9b": "flux2-klein-9b"}  # model id → mflux base model
 QWEN = "image.qwen21"  # stable-diffusion.cpp on every platform; sides must be multiples of 32
-# Viggle turbo v0.2.1 schedule: 6 steps, the first high-noise segment cut into three.
-QWEN_SIGMAS = "1.0,0.9375,0.875,0.75,0.5,0.25,0.0"
+# Qwen-Image 2.1 Turbo's fixed 8-step schedule (CFG 1).
+QWEN_SIGMAS = "1.0,0.978453,0.95418,0.926626,0.89508,0.845148,0.704534,0.414568,0.0"
 
 
 def _sdcpp_model(model_id: str) -> list:
@@ -137,7 +137,7 @@ async def generate(job: Job) -> dict:
     job.params = {**p, "seed": seed, "model": model_id}
     out = job.dir / "image.png"
     if config.DIFFUSION_ENGINE == "sdcpp" or qwen:
-        steps = 6 if qwen else 4 if klein else 8
+        steps = 4 if klein else 8
         if qwen:
             width, height = width // 32 * 32, height // 32 * 32
         expected = 130 if qwen else 20 if model_id == "image.klein4b" else 40
